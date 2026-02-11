@@ -1,0 +1,61 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper : utilisateur authentifié
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Helper : l'utilisateur est le propriétaire du document
+    function isOwner(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+
+    // Helper : l'utilisateur est membre du foyer
+    function isHouseholdMember(householdId) {
+      return isAuth() &&
+        get(/databases/$(database)/documents/households/$(householdId)).data.memberIds.hasAny([request.auth.uid]);
+    }
+
+    // === USERS ===
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+    }
+
+    // === HOUSEHOLDS ===
+    match /households/{householdId} {
+      // Tout utilisateur authentifié peut lire (get/list)
+      allow read: if isAuth();
+
+      // Création : l'utilisateur doit être dans memberIds
+      allow create: if isAuth() && request.resource.data.memberIds.hasAny([request.auth.uid]);
+
+      // Mise à jour : membres actuels OU utilisateur qui s'ajoute (join via invite code)
+      allow update: if isAuth() && (
+        resource.data.memberIds.hasAny([request.auth.uid]) ||
+        request.resource.data.memberIds.hasAny([request.auth.uid])
+      );
+
+      // Suppression : seulement si aucun membre
+      allow delete: if isAuth() && resource.data.memberIds.size() == 0;
+
+      // === TASK LOGS (sous-collection) ===
+      match /taskLogs/{logId} {
+        allow read: if isHouseholdMember(householdId);
+        allow create: if isHouseholdMember(householdId);
+        allow update: if isHouseholdMember(householdId);
+        allow delete: if isHouseholdMember(householdId);
+      }
+
+      // === MEMBER PREFERENCES (sous-collection) ===
+      match /memberPreferences/{userId} {
+        allow read: if isHouseholdMember(householdId);
+        allow create, update, delete: if isHouseholdMember(householdId) && request.auth.uid == userId;
+      }
+    }
+  }
+}
