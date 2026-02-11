@@ -129,7 +129,6 @@ class _PeriodFilterState extends ConsumerState<PeriodFilter> {
     final hasActiveAdvancedFilter = filter.taskNameFr != null;
 
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
         border: Border(
@@ -139,9 +138,11 @@ class _PeriodFilterState extends ConsumerState<PeriodFilter> {
           ),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // Period chips
           Wrap(
             spacing: 8,
@@ -297,6 +298,7 @@ class _PeriodFilterState extends ConsumerState<PeriodFilter> {
             ),
           ],
         ],
+      ),
       ),
     );
   }

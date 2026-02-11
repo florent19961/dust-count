@@ -52,81 +52,104 @@ class TaskHistoryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final taskLogsAsync = ref.watch(filteredTaskLogsProvider);
 
-    final content = Column(
-      children: [
-        // Filter section
-        PeriodFilter(
-          members: household.members,
-          customCategories: household.customCategories,
-          predefinedTasks: household.predefinedTasks,
-          showTaskFilter: true,
-        ),
+    final filterSliver = SliverToBoxAdapter(
+      child: PeriodFilter(
+        members: household.members,
+        customCategories: household.customCategories,
+        predefinedTasks: household.predefinedTasks,
+        showTaskFilter: true,
+      ),
+    );
 
-        // Task list
-        Expanded(
-          child: taskLogsAsync.when(
-            data: (tasks) {
-              if (tasks.isEmpty) {
-                return _buildEmptyState(context);
-              }
+    final content = taskLogsAsync.when(
+      data: (tasks) {
+        if (tasks.isEmpty) {
+          return CustomScrollView(
+            slivers: [
+              filterSliver,
+              SliverFillRemaining(
+                child: _buildEmptyState(context),
+              ),
+            ],
+          );
+        }
 
-              final groupedTasks = _groupTasksByDate(tasks);
-              final sortedDates = groupedTasks.keys.toList()
-                ..sort((a, b) => b.compareTo(a));
+        final groupedTasks = _groupTasksByDate(tasks);
+        final sortedDates = groupedTasks.keys.toList()
+          ..sort((a, b) => b.compareTo(a));
 
-              return RefreshIndicator(
-                onRefresh: () async {
-                  ref.invalidate(filteredTaskLogsProvider);
-                  await Future.delayed(const Duration(milliseconds: 500));
-                },
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: sortedDates.length,
-                  itemBuilder: (context, index) {
-                    final date = sortedDates[index];
-                    final tasksForDate = groupedTasks[date]!;
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(filteredTaskLogsProvider);
+            await Future.delayed(const Duration(milliseconds: 500));
+          },
+          child: CustomScrollView(
+            slivers: [
+              filterSliver,
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final date = sortedDates[index];
+                      final tasksForDate = groupedTasks[date]!;
 
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Date header
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                          child: Text(
-                            _formatDateHeader(date, context),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.onSurface,
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding:
+                                const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                            child: Text(
+                              _formatDateHeader(date, context),
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface,
+                              ),
                             ),
                           ),
-                        ),
-                        // Tasks for this date
-                        ...tasksForDate.map((task) {
-                          return TaskCard(
-                            taskLog: task,
-                            household: household,
-                            onTap: () {
-                              context.push(
-                                '/household/${household.id}/task/${task.id}',
-                                extra: {
-                                  'task': task,
-                                  'household': household,
-                                },
-                              );
-                            },
-                          );
-                        }),
-                      ],
-                    );
-                  },
+                          ...tasksForDate.map((task) {
+                            return TaskCard(
+                              taskLog: task,
+                              household: household,
+                              onTap: () {
+                                context.push(
+                                  '/household/${household.id}/task/${task.id}',
+                                  extra: {
+                                    'task': task,
+                                    'household': household,
+                                  },
+                                );
+                              },
+                            );
+                          }),
+                        ],
+                      );
+                    },
+                    childCount: sortedDates.length,
+                  ),
                 ),
-              );
-            },
-            loading: () => const Center(
-              child: CircularProgressIndicator(),
-            ),
-            error: (error, stack) => Center(
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => CustomScrollView(
+        slivers: [
+          filterSliver,
+          const SliverFillRemaining(
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        ],
+      ),
+      error: (error, stack) => CustomScrollView(
+        slivers: [
+          filterSliver,
+          SliverFillRemaining(
+            child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -145,7 +168,8 @@ class TaskHistoryScreen extends ConsumerWidget {
                     error.toString(),
                     style: TextStyle(
                       fontSize: 14,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      color:
+                          Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -161,8 +185,8 @@ class TaskHistoryScreen extends ConsumerWidget {
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
 
     if (embedded) {

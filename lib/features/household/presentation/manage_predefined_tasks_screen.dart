@@ -184,37 +184,11 @@ class _ManagePredefinedTasksScreenState
       ),
     );
 
-    // Wrap category header in DragTarget for drag & drop
-    return Column(
+    // Wrap entire category section in DragTarget for drag & drop
+    final sectionContent = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (!isArchived)
-          DragTarget<PredefinedTask>(
-            onWillAcceptWithDetails: (details) {
-              return details.data.categoryId != categoryId;
-            },
-            onAcceptWithDetails: (details) {
-              _onTaskDroppedOnCategory(
-                household,
-                details.data,
-                categoryId,
-              );
-            },
-            builder: (context, candidateData, rejectedData) {
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                decoration: BoxDecoration(
-                  color: candidateData.isNotEmpty
-                      ? color.withOpacity(0.15)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: header,
-              );
-            },
-          )
-        else
-          header,
+        header,
         ...tasks.map((task) => _buildTaskTile(
               context,
               household,
@@ -223,6 +197,33 @@ class _ManagePredefinedTasksScreenState
               customCategories,
             )),
       ],
+    );
+
+    if (isArchived) return sectionContent;
+
+    return DragTarget<PredefinedTask>(
+      onWillAcceptWithDetails: (details) {
+        return details.data.categoryId != categoryId;
+      },
+      onAcceptWithDetails: (details) {
+        _onTaskDroppedOnCategory(
+          household,
+          details.data,
+          categoryId,
+        );
+      },
+      builder: (context, candidateData, rejectedData) {
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            color: candidateData.isNotEmpty
+                ? color.withOpacity(0.15)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: sectionContent,
+        );
+      },
     );
   }
 

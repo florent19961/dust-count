@@ -35,7 +35,7 @@ ThemeData get darkTheme {
     ),
 
     // Card Theme (Neomorphism-inspired)
-    cardTheme: CardThemeData(
+    cardTheme: CardTheme(
       elevation: 0,
       color: AppColors.surfaceDark,
       surfaceTintColor: Colors.transparent,
@@ -209,7 +209,7 @@ ThemeData get darkTheme {
     ),
 
     // Dialog Theme
-    dialogTheme: DialogThemeData(
+    dialogTheme: DialogTheme(
       backgroundColor: AppColors.surfaceDark,
       elevation: 8,
       shape: RoundedRectangleBorder(
@@ -403,7 +403,7 @@ ThemeData get darkTheme {
     ),
 
     // Tab Bar Theme
-    tabBarTheme: const TabBarThemeData(
+    tabBarTheme: const TabBarTheme(
       labelColor: Color(0xFFB3D0A5),
       unselectedLabelColor: AppColors.textSecondary,
       labelStyle: TextStyle(
