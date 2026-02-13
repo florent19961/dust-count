@@ -23,6 +23,17 @@ class CategoryChip extends StatelessWidget {
     super.key,
   });
 
+  Widget _buildCategoryVisual({
+    required double size,
+    required Color color,
+    required Color fallbackColor,
+  }) {
+    if (category.hasEmoji) {
+      return Text(category.emoji!, style: TextStyle(fontSize: size));
+    }
+    return Icon(category.icon, size: size, color: color);
+  }
+
   @override
   Widget build(BuildContext context) {
     final color = category.color;
@@ -41,20 +52,20 @@ class CategoryChip extends StatelessWidget {
               width: selected ? 2 : 1,
             ),
           ),
-          child: Icon(
-            category.icon,
-            size: 20,
+          child: _buildCategoryVisual(
+            size: category.hasEmoji ? 18 : 20,
             color: selected ? color : colorScheme.onSurfaceVariant,
+            fallbackColor: colorScheme.onSurfaceVariant,
           ),
         ),
       );
     }
 
     return FilterChip(
-      avatar: Icon(
-        category.icon,
-        size: 18,
+      avatar: _buildCategoryVisual(
+        size: category.hasEmoji ? 16 : 18,
         color: selected ? color : colorScheme.onSurfaceVariant,
+        fallbackColor: colorScheme.onSurfaceVariant,
       ),
       label: Text(category.labelFr),
       selected: selected,

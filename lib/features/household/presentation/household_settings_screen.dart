@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:dust_count/shared/utils/category_helpers.dart';
 import 'package:dust_count/shared/models/household.dart';
+import 'package:dust_count/shared/models/household_category.dart';
 import 'package:dust_count/features/household/domain/household_providers.dart';
 
 /// Settings screen for managing a household
@@ -379,7 +380,8 @@ class HouseholdSettingsScreen extends ConsumerWidget {
               runSpacing: 8,
               children: household.predefinedTasks
                   .take(5)
-                  .map((task) => _buildTaskChip(context, task))
+                  .map((task) => _buildTaskChip(
+                        context, task, household.customCategories))
                   .toList(),
             ),
             if (household.predefinedTasks.length > 5) ...[
@@ -401,15 +403,19 @@ class HouseholdSettingsScreen extends ConsumerWidget {
   Widget _buildTaskChip(
     BuildContext context,
     PredefinedTask task,
+    List<HouseholdCategory> customCategories,
   ) {
     final theme = Theme.of(context);
     final taskName = _getLocalizedTaskName(task);
+    final emoji = getCategoryEmoji(task.categoryId, customCategories);
 
     return Chip(
-      avatar: Icon(
-        getCategoryIcon(task.categoryId, const []),
-        size: 16,
-      ),
+      avatar: emoji != null
+          ? Text(emoji, style: const TextStyle(fontSize: 14))
+          : Icon(
+              getCategoryIcon(task.categoryId, customCategories),
+              size: 16,
+            ),
       label: Text(taskName),
       labelStyle: theme.textTheme.bodySmall,
       visualDensity: VisualDensity.compact,

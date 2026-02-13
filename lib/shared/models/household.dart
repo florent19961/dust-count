@@ -266,7 +266,9 @@ class MemberPreferences {
     final data = doc.data()!;
     return MemberPreferences(
       userId: doc.id,
-      quickTaskIds: List<String>.from(data['quickTaskIds'] as List<dynamic>),
+      quickTaskIds: List<String>.from(
+        (data['quickTaskIds'] as List<dynamic>?) ?? <dynamic>[],
+      ),
     );
   }
 

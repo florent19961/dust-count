@@ -192,8 +192,14 @@ class HouseholdController extends StateNotifier<AsyncValue<void>> {
     return null;
   }
 
-  /// Commits the join with a chosen display name
-  Future<void> confirmJoin(String inviteCode, String displayName) async {
+  /// Commits the join with a chosen display name.
+  ///
+  /// Returns the household ID on success. The caller is responsible for
+  /// setting [currentHouseholdIdProvider] — doing it here would trigger
+  /// snapshot listeners before Firestore propagates the member write,
+  /// causing permission-denied errors.
+  Future<String?> confirmJoin(String inviteCode, String displayName) async {
+    String? joinedHouseholdId;
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final currentUserAsync = ref.read(currentUserProvider);
@@ -228,9 +234,9 @@ class HouseholdController extends StateNotifier<AsyncValue<void>> {
       // Add household to user's household list
       await userRepository.addHouseholdToUser(user.userId, household.id);
 
-      // Set as current household
-      ref.read(currentHouseholdIdProvider.notifier).state = household.id;
+      joinedHouseholdId = household.id;
     });
+    return joinedHouseholdId;
   }
 
   /// Leaves a household
@@ -380,6 +386,15 @@ class HouseholdController extends StateNotifier<AsyncValue<void>> {
     state = await AsyncValue.guard(() async {
       final repo = ref.read(householdRepositoryProvider);
       await repo.addCustomCategory(householdId, category);
+    });
+  }
+
+  /// Deletes an empty custom category from a household
+  Future<void> deleteCustomCategory(String householdId, String categoryId) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final repo = ref.read(householdRepositoryProvider);
+      await repo.removeCustomCategory(householdId, categoryId);
     });
   }
 }

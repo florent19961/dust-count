@@ -333,9 +333,25 @@ class HouseholdRepository {
           .doc(householdId)
           .collection('memberPreferences')
           .doc(userId)
-          .set({'quickTaskIds': quickTaskIds});
+          .set({'quickTaskIds': quickTaskIds}, SetOptions(merge: true));
     } catch (e) {
       throw Exception('Failed to update quick task IDs: ${e.toString()}');
+    }
+  }
+
+  /// Removes a custom category from a household
+  Future<void> removeCustomCategory(String householdId, String categoryId) async {
+    try {
+      final household = await getHousehold(householdId);
+      if (household == null) throw Exception('Household not found');
+      final updated = household.customCategories
+          .where((c) => c.id != categoryId)
+          .toList();
+      await _firestore.collection(_collectionPath).doc(householdId).update({
+        'customCategories': updated.map((c) => c.toMap()).toList(),
+      });
+    } catch (e) {
+      throw Exception('Failed to remove custom category: ${e.toString()}');
     }
   }
 

@@ -186,17 +186,32 @@ class _PeriodFilterState extends ConsumerState<PeriodFilter> {
             ),
           ),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: getAllCategoriesWithArchivees(widget.customCategories)
-                .map((category) {
-              return CategoryChip(
-                category: category,
-                selected: filter.categoryId == category.id,
-                onTap: () => _toggleCategory(category.id),
+          Builder(
+            builder: (context) {
+              final categories = getFilterCategories(
+                widget.customCategories,
+                widget.predefinedTasks,
               );
-            }).toList(),
+              // Auto-clear obsolete category filter
+              if (filter.categoryId != null &&
+                  !categories.any((c) => c.id == filter.categoryId)) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  ref.read(taskFilterProvider.notifier).state =
+                      filter.copyWith(clearCategory: true, clearTaskNameFr: true);
+                });
+              }
+              return Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: categories.map((category) {
+                  return CategoryChip(
+                    category: category,
+                    selected: filter.categoryId == category.id,
+                    onTap: () => _toggleCategory(category.id),
+                  );
+                }).toList(),
+              );
+            },
           ),
           if (widget.members.length > 1) ...[
             const SizedBox(height: 12),

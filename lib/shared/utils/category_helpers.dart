@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dust_count/shared/models/household.dart';
 import 'package:dust_count/shared/models/household_category.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:dust_count/app/theme/app_colors.dart';
@@ -63,6 +64,26 @@ List<HouseholdCategory> getAllCategoriesWithArchivees(
   return [...builtInCategories, ...custom, archiveesCategory];
 }
 
+/// Returns categories for filter UI: only categories that contain at least
+/// one predefined task. Includes [archiveesCategory] only when at least one
+/// predefined task has `categoryId == 'archivees'`.
+List<HouseholdCategory> getFilterCategories(
+  List<HouseholdCategory> custom,
+  List<PredefinedTask> predefinedTasks,
+) {
+  final usedCategoryIds = predefinedTasks.map((t) => t.categoryId).toSet();
+  final result = <HouseholdCategory>[];
+  for (final cat in [...builtInCategories, ...custom]) {
+    if (usedCategoryIds.contains(cat.id)) {
+      result.add(cat);
+    }
+  }
+  if (usedCategoryIds.contains('archivees')) {
+    result.add(archiveesCategory);
+  }
+  return result;
+}
+
 /// Finds a category by ID among built-in + custom + archivees.
 HouseholdCategory? findCategory(
   String id,
@@ -104,6 +125,12 @@ String getCategoryLabel(String id, List<HouseholdCategory> custom) {
     default:
       return findCategory(id, custom)?.labelFr ?? id;
   }
+}
+
+/// Gets the emoji for a category ID, or null if none.
+String? getCategoryEmoji(String id, List<HouseholdCategory> custom) {
+  final cat = findCategory(id, custom);
+  return (cat != null && cat.hasEmoji) ? cat.emoji : null;
 }
 
 /// Gets the color for a category ID.

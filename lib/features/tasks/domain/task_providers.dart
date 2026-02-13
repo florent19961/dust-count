@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dust_count/shared/models/task_log.dart';
 import 'package:dust_count/shared/models/filter_period.dart';
@@ -74,7 +77,10 @@ final taskFilterProvider = StateProvider<TaskFilter>((ref) {
   );
 });
 
-/// Provider for filtered task logs stream
+/// Provider for filtered task logs stream.
+///
+/// Includes a retry mechanism for permission-denied errors that can occur
+/// right after joining a household (Firestore security rule race condition).
 final filteredTaskLogsProvider = StreamProvider<List<TaskLog>>((ref) {
   final householdId = ref.watch(currentHouseholdIdProvider);
 
@@ -85,14 +91,47 @@ final filteredTaskLogsProvider = StreamProvider<List<TaskLog>>((ref) {
   final filter = ref.watch(taskFilterProvider);
   final taskRepository = ref.watch(taskRepositoryProvider);
 
-  return taskRepository.watchTaskLogs(
-    householdId,
-    startDate: filter.startDate,
-    endDate: filter.endDate,
-    categoryId: filter.categoryId,
-    performedBy: filter.performedBy,
-    taskNameFr: filter.taskNameFr,
-  );
+  Stream<List<TaskLog>> watchWithRetry() {
+    int retries = 0;
+    late StreamController<List<TaskLog>> controller;
+    StreamSubscription<List<TaskLog>>? subscription;
+
+    void listen() {
+      subscription = taskRepository
+          .watchTaskLogs(
+            householdId,
+            startDate: filter.startDate,
+            endDate: filter.endDate,
+            categoryId: filter.categoryId,
+            performedBy: filter.performedBy,
+            taskNameFr: filter.taskNameFr,
+          )
+          .listen(
+            controller.add,
+            onError: (Object error) {
+              if (error is FirebaseException &&
+                  error.code == 'permission-denied' &&
+                  retries < 2) {
+                retries++;
+                subscription?.cancel();
+                Future.delayed(const Duration(seconds: 1), listen);
+              } else {
+                controller.addError(error);
+              }
+            },
+            onDone: controller.close,
+          );
+    }
+
+    controller = StreamController<List<TaskLog>>(
+      onListen: listen,
+      onCancel: () => subscription?.cancel(),
+    );
+
+    return controller.stream;
+  }
+
+  return watchWithRetry();
 });
 
 /// Provider for task controller

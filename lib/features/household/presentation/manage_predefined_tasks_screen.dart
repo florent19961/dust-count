@@ -52,11 +52,6 @@ class _ManagePredefinedTasksScreenState
               label: Text(S.addCategory),
               onPressed: () => _showAddCategorySheet(context),
             ),
-            if (_dirty)
-              TextButton(
-                onPressed: _saveQuickTasks,
-                child: Text(S.save),
-              ),
           ],
         ),
         floatingActionButton: FloatingActionButton(
@@ -69,8 +64,11 @@ class _ManagePredefinedTasksScreenState
               return Center(child: Text(S.householdNotFound));
             }
 
-            // Initialize quick task IDs once
+            // Initialize quick task IDs once — wait for prefs stream
             if (!_initialized) {
+              if (prefsAsync.isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
               final prefs = prefsAsync.value;
               if (prefs != null && prefs.quickTaskIds.isNotEmpty) {
                 final validIds =
@@ -99,6 +97,13 @@ class _ManagePredefinedTasksScreenState
 
             final grouped = _groupByCategory(tasks);
             final customCats = household.customCategories;
+            // Include ALL categories even when empty
+            for (final cat in builtInCategories) {
+              grouped.putIfAbsent(cat.id, () => []);
+            }
+            for (final cat in customCats) {
+              grouped.putIfAbsent(cat.id, () => []);
+            }
             final categories = grouped.keys.toList()
               ..sort((a, b) {
                 if (a == 'archivees') return 1;
@@ -165,21 +170,36 @@ class _ManagePredefinedTasksScreenState
   ) {
     final theme = Theme.of(context);
     final color = getCategoryColor(categoryId, customCategories);
+    final isCustom = !builtInCategories.any((c) => c.id == categoryId) &&
+        categoryId != 'archivees';
+    final isEmpty = tasks.isEmpty;
 
+    final emoji = getCategoryEmoji(categoryId, customCategories);
     final header = Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Row(
         children: [
-          Icon(getCategoryIcon(categoryId, customCategories),
-              size: 18, color: color),
+          if (emoji != null)
+            Text(emoji, style: const TextStyle(fontSize: 18))
+          else
+            Icon(getCategoryIcon(categoryId, customCategories),
+                size: 18, color: color),
           const SizedBox(width: 8),
-          Text(
-            getCategoryLabel(categoryId, customCategories),
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
+          Expanded(
+            child: Text(
+              getCategoryLabel(categoryId, customCategories),
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
+          if (isCustom && isEmpty)
+            IconButton(
+              icon: Icon(Icons.delete_outline, size: 20, color: theme.colorScheme.error),
+              tooltip: S.delete,
+              onPressed: () => _confirmDeleteCategory(categoryId),
+            ),
         ],
       ),
     );
@@ -189,13 +209,26 @@ class _ManagePredefinedTasksScreenState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         header,
-        ...tasks.map((task) => _buildTaskTile(
-              context,
-              household,
-              task,
-              isArchived,
-              customCategories,
-            )),
+        if (isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: ListTile(
+              leading: Icon(Icons.add_circle_outline, color: color),
+              title: Text(
+                S.addTaskToCategory,
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+              ),
+              onTap: () => _showAddTaskSheet(context, initialCategoryId: categoryId),
+            ),
+          )
+        else
+          ...tasks.map((task) => _buildTaskTile(
+                context,
+                household,
+                task,
+                isArchived,
+                customCategories,
+              )),
       ],
     );
 
@@ -213,18 +246,57 @@ class _ManagePredefinedTasksScreenState
         );
       },
       builder: (context, candidateData, rejectedData) {
+        final isHighlighted = candidateData.isNotEmpty;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
-            color: candidateData.isNotEmpty
-                ? color.withOpacity(0.15)
+            color: isHighlighted
+                ? color.withOpacity(0.25)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
+            border: isHighlighted
+                ? Border.all(color: color, width: 2)
+                : null,
           ),
           child: sectionContent,
         );
       },
     );
+  }
+
+  Future<void> _confirmDeleteCategory(String categoryId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(S.deleteCategoryTitle),
+        content: Text(S.deleteCategoryMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(S.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: Text(S.delete),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await ref
+          .read(householdControllerProvider.notifier)
+          .deleteCustomCategory(widget.householdId, categoryId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(S.categoryDeleted)),
+        );
+      }
+    }
   }
 
   Widget _buildTaskTile(
@@ -238,6 +310,13 @@ class _ManagePredefinedTasksScreenState
     final isQuick = _quickTaskIds.contains(task.id);
 
     final tile = ListTile(
+      leading: isArchived
+          ? null
+          : Icon(
+              Icons.drag_handle,
+              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+              size: 20,
+            ),
       title: Text(
         task.nameFr,
         style: TextStyle(
@@ -293,15 +372,23 @@ class _ManagePredefinedTasksScreenState
       );
     }
 
+    final categoryColor = getCategoryColor(task.categoryId, customCategories);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       child: LongPressDraggable<PredefinedTask>(
         data: task,
+        delay: const Duration(milliseconds: 200),
         feedback: Material(
-          elevation: 4,
+          elevation: 6,
           borderRadius: BorderRadius.circular(12),
-          child: SizedBox(
+          color: theme.colorScheme.surfaceContainerHighest,
+          child: Container(
             width: MediaQuery.of(context).size.width * 0.8,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: categoryColor, width: 2),
+            ),
             child: tile,
           ),
         ),
@@ -355,32 +442,23 @@ class _ManagePredefinedTasksScreenState
     });
   }
 
-  Future<void> _saveQuickTasks() async {
+  Future<void> _saveAndPop() async {
     await ref
         .read(householdControllerProvider.notifier)
         .updateQuickTaskIds(widget.householdId, _quickTaskIds);
-    if (mounted) {
-      setState(() => _dirty = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.quickTasksUpdated)),
-      );
-    }
-  }
-
-  Future<void> _saveAndPop() async {
-    await _saveQuickTasks();
     if (mounted) {
       Navigator.of(context).pop();
     }
   }
 
-  void _showAddTaskSheet(BuildContext context) {
+  void _showAddTaskSheet(BuildContext context, {String? initialCategoryId}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (context) => _AddPredefinedTaskSheet(
         householdId: widget.householdId,
         ref: ref,
+        initialCategoryId: initialCategoryId,
       ),
     );
   }
@@ -431,10 +509,12 @@ class _ManagePredefinedTasksScreenState
 class _AddPredefinedTaskSheet extends StatefulWidget {
   final String householdId;
   final WidgetRef ref;
+  final String? initialCategoryId;
 
   const _AddPredefinedTaskSheet({
     required this.householdId,
     required this.ref,
+    this.initialCategoryId,
   });
 
   @override
@@ -445,7 +525,7 @@ class _AddPredefinedTaskSheet extends StatefulWidget {
 class _AddPredefinedTaskSheetState extends State<_AddPredefinedTaskSheet> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  String _categoryId = 'menage';
+  late String _categoryId = widget.initialCategoryId ?? 'menage';
   int _durationMinutes = 15;
   TaskDifficulty _difficulty = TaskDifficulty.reloo;
 
@@ -771,7 +851,10 @@ class _TaskFormSheetState extends State<_TaskFormSheet> {
                     value: cat.id,
                     child: Row(
                       children: [
-                        Icon(cat.icon, size: 18, color: cat.color),
+                        if (cat.hasEmoji)
+                          Text(cat.emoji!, style: const TextStyle(fontSize: 18))
+                        else
+                          Icon(cat.icon, size: 18, color: cat.color),
                         const SizedBox(width: 8),
                         Text(getCategoryLabel(
                             cat.id, widget.customCategories)),
@@ -920,31 +1003,9 @@ class _AddCategorySheet extends StatefulWidget {
 class _AddCategorySheetState extends State<_AddCategorySheet> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  int? _selectedIconCodePoint;
+  final _emojiController = TextEditingController();
+  String? _selectedEmoji;
   int? _selectedColorValue;
-
-  static const List<IconData> _availableIcons = [
-    Icons.pets,
-    Icons.child_care,
-    Icons.fitness_center,
-    Icons.local_florist,
-    Icons.directions_car,
-    Icons.computer,
-    Icons.health_and_safety,
-    Icons.yard,
-    Icons.pool,
-    Icons.park,
-    Icons.medical_services,
-    Icons.school,
-    Icons.work,
-    Icons.music_note,
-    Icons.sports_esports,
-    Icons.book,
-    Icons.camera_alt,
-    Icons.brush,
-    Icons.build,
-    Icons.star,
-  ];
 
   static const List<Color> _availableColors = [
     Color(0xFFE57373), // Red
@@ -964,18 +1025,20 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
   @override
   void dispose() {
     _nameController.dispose();
+    _emojiController.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedIconCodePoint == null || _selectedColorValue == null) return;
+    if (_selectedEmoji == null || _selectedColorValue == null) return;
 
     final category = HouseholdCategory(
       id: const Uuid().v4(),
       labelFr: _nameController.text.trim(),
-      iconCodePoint: _selectedIconCodePoint!,
+      iconCodePoint: 0xe88a, // fallback Icons.home codepoint
       colorValue: _selectedColorValue!,
+      emoji: _selectedEmoji,
     );
 
     await widget.ref
@@ -1035,42 +1098,56 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
                 ),
               ),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _availableIcons.map((icon) {
-                  final isSelected =
-                      _selectedIconCodePoint == icon.codePoint;
-                  return GestureDetector(
-                    onTap: () {
-                      setState(
-                          () => _selectedIconCodePoint = icon.codePoint);
-                    },
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? colorScheme.primaryContainer
-                            : colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: isSelected
-                              ? colorScheme.primary
-                              : colorScheme.outlineVariant,
-                          width: isSelected ? 2 : 1,
-                        ),
-                      ),
-                      child: Icon(
-                        icon,
-                        size: 22,
-                        color: isSelected
+              Row(
+                children: [
+                  // Emoji preview
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _selectedEmoji != null
                             ? colorScheme.primary
-                            : colorScheme.onSurfaceVariant,
+                            : colorScheme.outlineVariant,
+                        width: _selectedEmoji != null ? 2 : 1,
                       ),
                     ),
-                  );
-                }).toList(),
+                    child: Center(
+                      child: _selectedEmoji != null
+                          ? Text(_selectedEmoji!,
+                              style: const TextStyle(fontSize: 28))
+                          : Icon(Icons.add_reaction_outlined,
+                              color: colorScheme.onSurfaceVariant),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _emojiController,
+                      decoration: InputDecoration(
+                        hintText: S.chooseIcon,
+                        border: const OutlineInputBorder(),
+                      ),
+                      onChanged: (value) {
+                        // Extract the first emoji (may be multi-codepoint grapheme)
+                        if (value.isNotEmpty) {
+                          final chars = value.characters.first;
+                          setState(() => _selectedEmoji = chars);
+                          // Keep only the first emoji in the field
+                          if (value.characters.length > 1) {
+                            _emojiController.text = chars;
+                            _emojiController.selection =
+                                TextSelection.collapsed(offset: chars.length);
+                          }
+                        } else {
+                          setState(() => _selectedEmoji = null);
+                        }
+                      },
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               Text(
@@ -1113,7 +1190,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
               ),
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: _selectedIconCodePoint != null &&
+                onPressed: _selectedEmoji != null &&
                         _selectedColorValue != null
                     ? _submit
                     : null,

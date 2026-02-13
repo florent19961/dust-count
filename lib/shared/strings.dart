@@ -246,7 +246,6 @@ abstract final class S {
       'Choisissez et ordonnez les tâches affichées en accès rapide';
   static const maxQuickTasksReached =
       'Maximum de 12 tâches rapides atteint';
-  static const quickTasksUpdated = 'Tâches rapides mises à jour';
 
   // Dashboard
   static const dashboard = 'Tableau de bord';
@@ -427,6 +426,11 @@ abstract final class S {
   static const categoryChanged = 'Catégorie modifiée';
   static const maxCategoriesReached =
       'Maximum de 9 catégories atteint';
+  static const deleteCategoryTitle = 'Supprimer la catégorie ?';
+  static const deleteCategoryMessage =
+      'Cette catégorie vide sera définitivement supprimée.';
+  static const categoryDeleted = 'Catégorie supprimée';
+  static const addTaskToCategory = 'Ajouter une tâche';
 
   static String taskAddedError(String error) =>
       "Erreur lors de l'ajout de la tâche : $error";

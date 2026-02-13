@@ -157,16 +157,20 @@ class _PredefinedTaskSelectorState extends State<PredefinedTaskSelector> {
 
     // Category groups
     for (final entry in grouped.entries) {
+      final categoryEmoji = getCategoryEmoji(entry.key, widget.customCategories);
       items.add(
         DropdownMenuItem<PredefinedTask>(
           enabled: false,
           child: Row(
             children: [
-              Icon(
-                getCategoryIcon(entry.key, widget.customCategories),
-                size: 16,
-                color: colorScheme.onSurfaceVariant,
-              ),
+              if (categoryEmoji != null)
+                Text(categoryEmoji, style: const TextStyle(fontSize: 16))
+              else
+                Icon(
+                  getCategoryIcon(entry.key, widget.customCategories),
+                  size: 16,
+                  color: colorScheme.onSurfaceVariant,
+                ),
               const SizedBox(width: 8),
               Text(
                 getCategoryLabel(entry.key, widget.customCategories),

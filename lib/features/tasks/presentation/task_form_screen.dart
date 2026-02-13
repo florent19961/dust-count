@@ -82,6 +82,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       });
       _durationController.text = '15';
     } else {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       setState(() {
         _selectedPredefinedTask = task;
         _selectedCategory = task.categoryId;
@@ -95,9 +96,11 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   /// Launch the full-screen timer and fill duration on return
   Future<void> _startTimer() async {
     if (_selectedPredefinedTask == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.pleaseSelectTaskFirst)),
-      );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(S.pleaseSelectTaskFirst)),
+        );
       return;
     }
 
@@ -173,16 +176,20 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     }
 
     if (_selectedPredefinedTask == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.pleaseSelectTask)),
-      );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(S.pleaseSelectTask)),
+        );
       return;
     }
 
     if (_selectedCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.pleaseSelectCategory)),
-      );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(S.pleaseSelectCategory)),
+        );
       return;
     }
 

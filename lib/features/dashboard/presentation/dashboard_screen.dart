@@ -148,7 +148,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final filter = ref.watch(dashboardFilterProvider);
     final hasActiveAdvancedFilter = filter.taskNameFr != null;
 
-    final categories = getAllCategories(widget.household.customCategories);
+    final categories = getFilterCategories(
+      widget.household.customCategories,
+      widget.household.predefinedTasks,
+    );
+
+    // Auto-clear obsolete category filter
+    if (filter.categoryId != null &&
+        !categories.any((c) => c.id == filter.categoryId)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(dashboardFilterProvider.notifier).state =
+            filter.copyWith(clearCategory: true, clearTaskNameFr: true);
+      });
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),

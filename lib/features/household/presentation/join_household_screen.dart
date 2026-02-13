@@ -81,37 +81,41 @@ class _JoinHouseholdScreenState extends ConsumerState<JoinHouseholdScreen> {
   Future<void> _doJoin(String inviteCode, String? displayName) async {
     final controller = ref.read(householdControllerProvider.notifier);
 
+    final String? householdId;
     if (displayName != null) {
-      await controller.confirmJoin(inviteCode, displayName);
+      householdId = await controller.confirmJoin(inviteCode, displayName);
     } else {
       // Use the user's current displayName
       final user = ref.read(currentUserProvider).value;
       if (user == null) throw Exception('User not authenticated');
-      await controller.confirmJoin(inviteCode, user.displayName);
+      householdId = await controller.confirmJoin(inviteCode, user.displayName);
     }
 
     if (!mounted) return;
 
-    final currentHouseholdId = ref.read(currentHouseholdIdProvider);
-    if (currentHouseholdId == null) {
+    if (householdId == null) {
       context.go('/households');
       return;
     }
 
     // Post-join: check if returning member with a different name
     try {
-      final previousName = await controller.checkReturningMember(currentHouseholdId);
+      final previousName = await controller.checkReturningMember(householdId);
       if (!mounted) return;
 
       if (previousName != null) {
-        await _showReturningMemberDialog(currentHouseholdId, previousName);
+        await _showReturningMemberDialog(householdId, previousName);
       }
     } catch (_) {
       // Non-blocking — index might not be deployed yet
     }
 
     if (!mounted) return;
-    context.go('/household/$currentHouseholdId');
+
+    // Set as current household just before navigation — after all Firestore
+    // writes have propagated, avoiding permission-denied on snapshot listeners.
+    ref.read(currentHouseholdIdProvider.notifier).state = householdId;
+    context.go('/household/$householdId');
   }
 
   /// Post-join dialog for returning members — propose renaming back
