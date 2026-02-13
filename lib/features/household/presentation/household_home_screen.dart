@@ -36,17 +36,151 @@ class _HouseholdHomeScreenState extends ConsumerState<HouseholdHomeScreen> {
     });
   }
 
-  void _showAddTaskSheet(Household household) {
+  void _showHouseholdSwitcher() {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.85,
-          child: TaskFormScreen(
-            household: household,
-            embedded: true,
-            onTaskAdded: () => Navigator.pop(context),
+      builder: (sheetContext) {
+        return Consumer(
+          builder: (context, sheetRef, _) {
+            final householdsAsync = sheetRef.watch(userHouseholdsProvider);
+
+            return SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 32,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        S.myHouseholds,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  householdsAsync.when(
+                    data: (households) => Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (final h in households)
+                          ListTile(
+                            leading: Icon(
+                              Icons.home,
+                              color: h.id == widget.householdId
+                                  ? Theme.of(context).colorScheme.primary
+                                  : null,
+                            ),
+                            title: Text(
+                              h.name,
+                              style: h.id == widget.householdId
+                                  ? TextStyle(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                    )
+                                  : null,
+                            ),
+                            subtitle: Text(S.memberCount(h.memberIds.length)),
+                            trailing: h.id == widget.householdId
+                                ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
+                                : null,
+                            onTap: () {
+                              Navigator.pop(sheetContext);
+                              if (h.id != widget.householdId) {
+                                ref.read(currentHouseholdIdProvider.notifier).state = h.id;
+                                context.go('/household/${h.id}');
+                              }
+                            },
+                          ),
+                      ],
+                    ),
+                    loading: () => const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    error: (_, __) => Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(S.errorLoadingHouseholds),
+                    ),
+                  ),
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(Icons.add),
+                    title: Text(S.createHousehold),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      context.push('/households/create');
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.group_add),
+                    title: Text(S.joinHousehold),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      context.push('/households/join');
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showAddTaskSheet(Household household) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: S.close,
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 300),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 1),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          )),
+          child: child,
+        );
+      },
+      pageBuilder: (context, animation, secondaryAnimation) {
+        final bottomPadding = MediaQuery.of(context).padding.bottom;
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: Material(
+            elevation: 8,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(16),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: SizedBox(
+              height: MediaQuery.of(context).size.height * 0.85,
+              width: double.infinity,
+              child: Padding(
+                padding: EdgeInsets.only(bottom: bottomPadding),
+                child: TaskFormScreen(
+                  household: household,
+                  embedded: true,
+                  onTaskAdded: () => Navigator.pop(context),
+                ),
+              ),
+            ),
           ),
         );
       },
@@ -60,16 +194,34 @@ class _HouseholdHomeScreenState extends ConsumerState<HouseholdHomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/households'),
-          tooltip: S.backToHouseholds,
+        automaticallyImplyLeading: false,
+        title: GestureDetector(
+          onTap: _showHouseholdSwitcher,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: householdAsync.when(
+                  data: (household) => Text(
+                    household?.name ?? S.household,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  loading: () => const Text('...'),
+                  error: (_, __) => Text(S.household),
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.expand_more),
+            ],
+          ),
         ),
-        title: householdAsync.when(
-          data: (household) => Text(household?.name ?? S.household),
-          loading: () => const Text('...'),
-          error: (_, __) => Text(S.household),
-        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_outline),
+            onPressed: () => context.push('/profile'),
+            tooltip: S.profile,
+          ),
+        ],
       ),
       body: householdAsync.when(
         data: (household) {

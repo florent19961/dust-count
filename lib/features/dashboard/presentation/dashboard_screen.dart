@@ -6,6 +6,8 @@ import 'package:dust_count/shared/models/filter_period.dart';
 import 'package:dust_count/shared/widgets/category_chip.dart';
 import 'package:dust_count/shared/utils/category_helpers.dart';
 import 'package:dust_count/core/extensions/date_extensions.dart';
+import 'package:dust_count/core/constants/app_constants.dart';
+import 'package:dust_count/app/theme/app_colors.dart';
 import 'package:dust_count/features/dashboard/domain/dashboard_providers.dart';
 import 'package:dust_count/features/dashboard/presentation/widgets/time_distribution_chart.dart';
 import 'package:dust_count/features/dashboard/presentation/widgets/cumulative_evolution_chart.dart';
@@ -245,6 +247,65 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               );
             }).toList(),
           ),
+          // Difficulty filter
+          const SizedBox(height: 12),
+          Text(
+            S.filterByDifficulty,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ChoiceChip(
+                label: Text('😊', style: TextStyle(fontSize: 20)),
+                selected: filter.difficulty == TaskDifficulty.plaisir,
+                selectedColor: AppColors.difficultyPlaisir.withOpacity(0.3),
+                onSelected: (_) {
+                  if (filter.difficulty == TaskDifficulty.plaisir) {
+                    ref.read(dashboardFilterProvider.notifier).state =
+                        filter.copyWith(clearDifficulty: true);
+                  } else {
+                    ref.read(dashboardFilterProvider.notifier).state =
+                        filter.copyWith(difficulty: TaskDifficulty.plaisir);
+                  }
+                },
+              ),
+              ChoiceChip(
+                label: Text('😐', style: TextStyle(fontSize: 20)),
+                selected: filter.difficulty == TaskDifficulty.reloo,
+                selectedColor: AppColors.difficultyRelou.withOpacity(0.3),
+                onSelected: (_) {
+                  if (filter.difficulty == TaskDifficulty.reloo) {
+                    ref.read(dashboardFilterProvider.notifier).state =
+                        filter.copyWith(clearDifficulty: true);
+                  } else {
+                    ref.read(dashboardFilterProvider.notifier).state =
+                        filter.copyWith(difficulty: TaskDifficulty.reloo);
+                  }
+                },
+              ),
+              ChoiceChip(
+                label: Text('😩', style: TextStyle(fontSize: 20)),
+                selected: filter.difficulty == TaskDifficulty.infernal,
+                selectedColor: AppColors.difficultyInfernal.withOpacity(0.3),
+                onSelected: (_) {
+                  if (filter.difficulty == TaskDifficulty.infernal) {
+                    ref.read(dashboardFilterProvider.notifier).state =
+                        filter.copyWith(clearDifficulty: true);
+                  } else {
+                    ref.read(dashboardFilterProvider.notifier).state =
+                        filter.copyWith(difficulty: TaskDifficulty.infernal);
+                  }
+                },
+              ),
+            ],
+          ),
           if (widget.household.predefinedTasks.isNotEmpty) ...[
             const SizedBox(height: 12),
             // Advanced filters toggle
@@ -289,7 +350,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       TextButton.icon(
                         onPressed: () {
                           ref.read(dashboardFilterProvider.notifier).state =
-                              filter.copyWith(clearTaskNameFr: true);
+                              filter.copyWith(clearTaskNameFr: true, clearDifficulty: true);
                         },
                         icon: const Icon(Icons.clear, size: 18),
                         label: Text(S.resetFilters),

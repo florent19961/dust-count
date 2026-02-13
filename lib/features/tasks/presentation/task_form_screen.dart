@@ -90,17 +90,14 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         _difficulty = task.defaultDifficulty;
       });
       _durationController.text = task.defaultDurationMinutes.toString();
+      _formKey.currentState?.validate();
     }
   }
 
   /// Launch the full-screen timer and fill duration on return
   Future<void> _startTimer() async {
     if (_selectedPredefinedTask == null) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(content: Text(S.pleaseSelectTaskFirst)),
-        );
+      _formKey.currentState!.validate();
       return;
     }
 
@@ -263,7 +260,26 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Unified task dropdown
+          if (widget.embedded)
+            // Drag handle — visual indicator for bottom sheet
+            GestureDetector(
+              onVerticalDragEnd: (details) {
+                if (details.velocity.pixelsPerSecond.dy > 300) {
+                  Navigator.pop(context);
+                }
+              },
+              child: Center(
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12, top: 4),
+                  width: 32,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            ),
           PredefinedTaskSelector(
             tasks: visibleTasks,
             onTaskSelected: _onPredefinedTaskSelected,

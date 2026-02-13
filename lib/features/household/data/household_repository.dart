@@ -25,22 +25,27 @@ class HouseholdRepository {
     required String name,
     required String creatorId,
     required String creatorName,
+    List<PredefinedTask>? predefinedTasks,
+    List<HouseholdCategory>? customCategories,
   }) async {
     try {
       // Generate unique invite code (first 8 chars of UUID v4)
       final String inviteCode = _uuid.v4().substring(0, 8).toUpperCase();
 
-      // Create predefined tasks from default constants
-      final List<PredefinedTask> predefinedTasks = AppConstants.predefinedTasks
-          .map((taskData) => PredefinedTask(
-                id: _uuid.v4(),
-                nameFr: taskData['nameFr'] as String,
-                nameEn: taskData['nameEn'] as String,
-                categoryId: taskData['category'] as String,
-                defaultDurationMinutes: taskData['durationMinutes'] as int,
-                defaultDifficulty: taskData['difficulty'] as TaskDifficulty,
-              ))
-          .toList();
+      // Use provided tasks or generate from defaults
+      final List<PredefinedTask> tasks = predefinedTasks ??
+          AppConstants.predefinedTasks
+              .map((taskData) => PredefinedTask(
+                    id: _uuid.v4(),
+                    nameFr: taskData['nameFr'] as String,
+                    nameEn: taskData['nameEn'] as String,
+                    categoryId: taskData['category'] as String,
+                    defaultDurationMinutes:
+                        taskData['durationMinutes'] as int,
+                    defaultDifficulty:
+                        taskData['difficulty'] as TaskDifficulty,
+                  ))
+              .toList();
 
       // Create household member
       final HouseholdMember creator = HouseholdMember(
@@ -61,7 +66,8 @@ class HouseholdRepository {
         members: [creator],
         inviteCode: inviteCode,
         createdAt: DateTime.now(),
-        predefinedTasks: predefinedTasks,
+        predefinedTasks: tasks,
+        customCategories: customCategories ?? const [],
       );
 
       await docRef.set(household.toFirestore());

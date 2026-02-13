@@ -18,6 +18,7 @@ class TaskFilter {
   final FilterPeriod period;
   final String? performedBy;
   final String? taskNameFr;
+  final TaskDifficulty? difficulty;
 
   const TaskFilter({
     this.startDate,
@@ -26,6 +27,7 @@ class TaskFilter {
     this.period = FilterPeriod.thisWeek,
     this.performedBy,
     this.taskNameFr,
+    this.difficulty,
   });
 
   TaskFilter copyWith({
@@ -35,10 +37,12 @@ class TaskFilter {
     FilterPeriod? period,
     String? performedBy,
     String? taskNameFr,
+    TaskDifficulty? difficulty,
     bool clearCategory = false,
     bool clearDates = false,
     bool clearPerformedBy = false,
     bool clearTaskNameFr = false,
+    bool clearDifficulty = false,
   }) {
     return TaskFilter(
       startDate: clearDates ? null : (startDate ?? this.startDate),
@@ -47,6 +51,7 @@ class TaskFilter {
       period: period ?? this.period,
       performedBy: clearPerformedBy ? null : (performedBy ?? this.performedBy),
       taskNameFr: clearTaskNameFr ? null : (taskNameFr ?? this.taskNameFr),
+      difficulty: clearDifficulty ? null : (difficulty ?? this.difficulty),
     );
   }
 
@@ -60,11 +65,12 @@ class TaskFilter {
           categoryId == other.categoryId &&
           period == other.period &&
           performedBy == other.performedBy &&
-          taskNameFr == other.taskNameFr;
+          taskNameFr == other.taskNameFr &&
+          difficulty == other.difficulty;
 
   @override
   int get hashCode =>
-      Object.hash(startDate, endDate, categoryId, period, performedBy, taskNameFr);
+      Object.hash(startDate, endDate, categoryId, period, performedBy, taskNameFr, difficulty);
 }
 
 /// Provider for task filter state
@@ -105,6 +111,7 @@ final filteredTaskLogsProvider = StreamProvider<List<TaskLog>>((ref) {
             categoryId: filter.categoryId,
             performedBy: filter.performedBy,
             taskNameFr: filter.taskNameFr,
+            difficulty: filter.difficulty,
           )
           .listen(
             controller.add,

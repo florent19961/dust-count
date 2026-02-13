@@ -53,6 +53,7 @@ class DashboardRepository {
     DateTime end, {
     String? categoryId,
     String? taskNameFr,
+    TaskDifficulty? difficulty,
   }) async {
     Query<Map<String, dynamic>> query = _taskLogsRef(householdId);
 
@@ -62,6 +63,10 @@ class DashboardRepository {
 
     if (taskNameFr != null) {
       query = query.where('taskNameFr', isEqualTo: taskNameFr);
+    }
+
+    if (difficulty != null) {
+      query = query.where('difficulty', isEqualTo: difficulty.name);
     }
 
     query = query
@@ -84,9 +89,10 @@ class DashboardRepository {
     DateTime end, {
     String? categoryId,
     String? taskNameFr,
+    TaskDifficulty? difficulty,
   }) async {
     final logs = await _fetchTaskLogs(householdId, start, end,
-        categoryId: categoryId, taskNameFr: taskNameFr);
+        categoryId: categoryId, taskNameFr: taskNameFr, difficulty: difficulty);
 
     final Map<String, int> minutesPerMember = {};
 
@@ -106,9 +112,10 @@ class DashboardRepository {
     DateTime end, {
     String? categoryId,
     String? taskNameFr,
+    TaskDifficulty? difficulty,
   }) async {
     final logs = await _fetchTaskLogs(householdId, start, end,
-        categoryId: categoryId, taskNameFr: taskNameFr);
+        categoryId: categoryId, taskNameFr: taskNameFr, difficulty: difficulty);
 
     // Sort by date
     logs.sort((a, b) => a.date.compareTo(b.date));
@@ -158,9 +165,10 @@ class DashboardRepository {
     DateTime end, {
     String? categoryId,
     String? taskNameFr,
+    TaskDifficulty? difficulty,
   }) async {
     final logs = await _fetchTaskLogs(householdId, start, end,
-        categoryId: categoryId, taskNameFr: taskNameFr);
+        categoryId: categoryId, taskNameFr: taskNameFr, difficulty: difficulty);
 
     // Group by user
     final Map<String, List<TaskLog>> logsByUser = {};

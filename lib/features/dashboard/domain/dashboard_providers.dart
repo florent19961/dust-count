@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dust_count/shared/models/filter_period.dart';
+import 'package:dust_count/core/constants/app_constants.dart';
 import 'package:dust_count/features/dashboard/data/dashboard_repository.dart';
 import 'package:dust_count/features/household/domain/household_providers.dart';
 
@@ -10,6 +12,7 @@ class DashboardFilter {
   final DateTime? endDate;
   final String? categoryId;
   final String? taskNameFr;
+  final TaskDifficulty? difficulty;
 
   const DashboardFilter({
     required this.period,
@@ -17,6 +20,7 @@ class DashboardFilter {
     this.endDate,
     this.categoryId,
     this.taskNameFr,
+    this.difficulty,
   });
 
   /// Get the effective start date based on period
@@ -57,8 +61,10 @@ class DashboardFilter {
     DateTime? endDate,
     String? categoryId,
     String? taskNameFr,
+    TaskDifficulty? difficulty,
     bool clearCategory = false,
     bool clearTaskNameFr = false,
+    bool clearDifficulty = false,
   }) {
     return DashboardFilter(
       period: period ?? this.period,
@@ -66,6 +72,7 @@ class DashboardFilter {
       endDate: endDate ?? this.endDate,
       categoryId: clearCategory ? null : (categoryId ?? this.categoryId),
       taskNameFr: clearTaskNameFr ? null : (taskNameFr ?? this.taskNameFr),
+      difficulty: clearDifficulty ? null : (difficulty ?? this.difficulty),
     );
   }
 
@@ -78,12 +85,13 @@ class DashboardFilter {
         other.startDate == startDate &&
         other.endDate == endDate &&
         other.categoryId == categoryId &&
-        other.taskNameFr == taskNameFr;
+        other.taskNameFr == taskNameFr &&
+        other.difficulty == difficulty;
   }
 
   @override
   int get hashCode =>
-      Object.hash(period, startDate, endDate, categoryId, taskNameFr);
+      Object.hash(period, startDate, endDate, categoryId, taskNameFr, difficulty);
 }
 
 /// Provider for dashboard repository
@@ -97,6 +105,22 @@ final dashboardFilterProvider =
   return const DashboardFilter(period: FilterPeriod.thisWeek);
 });
 
+/// Retries a Firestore future up to [maxRetries] times on permission-denied
+Future<T> _retryOnPermissionDenied<T>(Future<T> Function() fn, {int maxRetries = 2}) async {
+  for (int attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied' && attempt < maxRetries) {
+        await Future.delayed(const Duration(seconds: 1));
+        continue;
+      }
+      rethrow;
+    }
+  }
+  throw StateError('Unreachable');
+}
+
 /// Provider for total minutes per member
 final minutesPerMemberProvider =
     FutureProvider<Map<String, int>>((ref) async {
@@ -108,13 +132,14 @@ final minutesPerMemberProvider =
   final filter = ref.watch(dashboardFilterProvider);
   final repository = ref.watch(dashboardRepositoryProvider);
 
-  return repository.getMinutesPerMember(
+  return _retryOnPermissionDenied(() => repository.getMinutesPerMember(
     householdId,
     filter.effectiveStartDate,
     filter.effectiveEndDate,
     categoryId: filter.categoryId,
     taskNameFr: filter.taskNameFr,
-  );
+    difficulty: filter.difficulty,
+  ));
 });
 
 /// Provider for daily cumulative minutes per member
@@ -128,13 +153,14 @@ final dailyCumulativeProvider =
   final filter = ref.watch(dashboardFilterProvider);
   final repository = ref.watch(dashboardRepositoryProvider);
 
-  return repository.getDailyMinutesPerMember(
+  return _retryOnPermissionDenied(() => repository.getDailyMinutesPerMember(
     householdId,
     filter.effectiveStartDate,
     filter.effectiveEndDate,
     categoryId: filter.categoryId,
     taskNameFr: filter.taskNameFr,
-  );
+    difficulty: filter.difficulty,
+  ));
 });
 
 /// Provider for leaderboard entries
@@ -148,11 +174,12 @@ final leaderboardProvider =
   final filter = ref.watch(dashboardFilterProvider);
   final repository = ref.watch(dashboardRepositoryProvider);
 
-  return repository.getLeaderboard(
+  return _retryOnPermissionDenied(() => repository.getLeaderboard(
     householdId,
     filter.effectiveStartDate,
     filter.effectiveEndDate,
     categoryId: filter.categoryId,
     taskNameFr: filter.taskNameFr,
-  );
+    difficulty: filter.difficulty,
+  ));
 });

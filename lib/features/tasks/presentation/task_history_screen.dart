@@ -68,6 +68,7 @@ class TaskHistoryScreen extends ConsumerWidget {
             slivers: [
               filterSliver,
               SliverFillRemaining(
+                hasScrollBody: false,
                 child: _buildEmptyState(context),
               ),
             ],
@@ -210,33 +211,36 @@ class TaskHistoryScreen extends ConsumerWidget {
 
   /// Build empty state widget
   Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.task_outlined,
-            size: 80,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            S.noTasksYet,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.task_outlined,
+              size: 80,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            S.addFirstTask,
-            style: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            const SizedBox(height: 16),
+            Text(
+              S.noTasksYet,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              S.addFirstTask,
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

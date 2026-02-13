@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:dust_count/features/auth/data/user_repository.dart';
@@ -62,12 +65,40 @@ final userHouseholdsProvider = StreamProvider<List<Household>>((ref) {
 });
 
 /// Provider that watches member preferences for the current user in a household
+/// Retries up to 2 times on permission-denied (race condition after joining)
 final memberPreferencesProvider = StreamProvider.family<MemberPreferences?, String>((ref, householdId) {
   final currentUserAsync = ref.watch(currentUserProvider);
   final user = currentUserAsync.value;
   if (user == null) return Stream.value(null);
   final repo = ref.watch(householdRepositoryProvider);
-  return repo.watchMemberPreferences(householdId, user.userId);
+
+  int retries = 0;
+  late StreamController<MemberPreferences?> controller;
+  StreamSubscription<MemberPreferences?>? subscription;
+
+  void listen() {
+    subscription = repo.watchMemberPreferences(householdId, user.userId).listen(
+      controller.add,
+      onError: (Object error) {
+        if (error is FirebaseException &&
+            error.code == 'permission-denied' &&
+            retries < 2) {
+          retries++;
+          subscription?.cancel();
+          Future<void>.delayed(const Duration(seconds: 1), listen);
+        } else {
+          controller.addError(error);
+        }
+      },
+      onDone: controller.close,
+    );
+  }
+
+  controller = StreamController<MemberPreferences?>(
+    onListen: listen,
+    onCancel: () => subscription?.cancel(),
+  );
+  return controller.stream;
 });
 
 /// Provider that resolves quick tasks from member preferences or falls back to defaults
@@ -110,8 +141,15 @@ class HouseholdController extends StateNotifier<AsyncValue<void>> {
 
   final Ref ref;
 
-  /// Creates a new household and sets it as the current household
-  Future<void> createHousehold(String name) async {
+  /// Creates a new household and sets it as the current household.
+  ///
+  /// If [customTasks] is provided, uses those instead of defaults.
+  /// If [customCategories] is provided, includes them in the household.
+  Future<void> createHousehold(
+    String name, {
+    List<PredefinedTask>? customTasks,
+    List<HouseholdCategory>? customCategories,
+  }) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final currentUserAsync = ref.read(currentUserProvider);
@@ -129,6 +167,8 @@ class HouseholdController extends StateNotifier<AsyncValue<void>> {
         name: name,
         creatorId: user.userId,
         creatorName: user.displayName,
+        predefinedTasks: customTasks,
+        customCategories: customCategories,
       );
 
       // Add household to user's household list

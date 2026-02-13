@@ -37,6 +37,26 @@ dev_dependencies:
   riverpod_generator: ^2.6.2
   build_runner: ^2.4.13
   json_serializable: ^6.9.0
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.4
 
 flutter:
   uses-material-design: true
+  assets:
+    - asset/
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "asset/dust_count_square.jpg"
+  adaptive_icon_background: "#1A1A2E"
+  adaptive_icon_foreground: "asset/dust_count_square.jpg"
+
+flutter_native_splash:
+  color: "#1A1A2E"
+  image: "asset/dust_count_square.jpg"
+  android: true
+  ios: false
+  android_12:
+    color: "#1A1A2E"
+    image: "asset/dust_count_square.jpg"

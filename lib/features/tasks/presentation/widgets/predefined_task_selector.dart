@@ -5,23 +5,12 @@ import 'package:dust_count/shared/models/household_category.dart';
 import 'package:dust_count/shared/utils/category_helpers.dart';
 import 'package:dust_count/core/constants/app_constants.dart';
 
-/// Widget for selecting a predefined task via a single grouped dropdown.
-///
-/// Shows "Tâches favorites" at the top, then tasks grouped by category.
+/// Compact task selector field that opens a bottom sheet picker.
 class PredefinedTaskSelector extends StatefulWidget {
-  /// List of predefined tasks from household
   final List<PredefinedTask> tasks;
-
-  /// Callback when a task is selected or deselected (null = deselection)
   final void Function(PredefinedTask? task) onTaskSelected;
-
-  /// Optional initial selection (for edit mode)
   final PredefinedTask? initialTask;
-
-  /// Optional custom quick task IDs (from member preferences)
   final List<String>? quickTaskIds;
-
-  /// Custom categories for resolving category labels
   final List<HouseholdCategory> customCategories;
 
   const PredefinedTaskSelector({
@@ -40,7 +29,6 @@ class PredefinedTaskSelector extends StatefulWidget {
 class _PredefinedTaskSelectorState extends State<PredefinedTaskSelector> {
   late PredefinedTask? _selectedTask = widget.initialTask;
 
-  /// Quick/favorite tasks resolved from quickTaskIds or fallback
   List<PredefinedTask> get _favoriteTasks {
     if (widget.quickTaskIds != null && widget.quickTaskIds!.isNotEmpty) {
       final taskMap = {for (final t in widget.tasks) t.id: t};
@@ -58,17 +46,6 @@ class _PredefinedTaskSelectorState extends State<PredefinedTaskSelector> {
         .toList();
   }
 
-  /// Group non-favorite, non-archived tasks by category
-  Map<String, List<PredefinedTask>> _groupByCategory(
-    List<PredefinedTask> tasks,
-  ) {
-    final grouped = <String, List<PredefinedTask>>{};
-    for (final task in tasks) {
-      grouped.putIfAbsent(task.categoryId, () => []).add(task);
-    }
-    return grouped;
-  }
-
   void _selectTask(PredefinedTask? task) {
     setState(() {
       _selectedTask = task;
@@ -76,128 +53,248 @@ class _PredefinedTaskSelectorState extends State<PredefinedTaskSelector> {
     widget.onTaskSelected(task);
   }
 
+  Future<void> _showTaskPickerSheet(BuildContext context) async {
+    final result = await showModalBottomSheet<PredefinedTask>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => _TaskPickerSheet(
+        tasks: widget.tasks,
+        favoriteTasks: _favoriteTasks,
+        selectedTask: _selectedTask,
+        customCategories: widget.customCategories,
+      ),
+    );
+    if (result != null) {
+      _selectTask(result);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final favorites = _favoriteTasks;
-    final favoriteIds = favorites.map((t) => t.id).toSet();
+    final emoji = _selectedTask != null
+        ? getCategoryEmoji(_selectedTask!.categoryId, widget.customCategories)
+        : null;
 
-    // Remaining tasks: exclude favorites and archived
-    final remainingTasks = widget.tasks
-        .where((t) => !favoriteIds.contains(t.id) && t.categoryId != 'archivees')
-        .toList();
-    final grouped = _groupByCategory(remainingTasks);
-
-    return DropdownButtonFormField<PredefinedTask>(
-      value: _selectedTask,
-      decoration: InputDecoration(
-        labelText: S.selectTask,
-        border: const OutlineInputBorder(),
-        prefixIcon: const Icon(Icons.task),
-      ),
-      isExpanded: true,
-      items: _buildDropdownItems(favorites, grouped, colorScheme),
-      onChanged: (task) {
-        _selectTask(task);
-      },
+    return FormField<PredefinedTask>(
+      initialValue: _selectedTask,
       validator: (value) {
-        if (value == null) {
-          return S.pleaseSelectTask;
-        }
+        if (_selectedTask == null) return S.pleaseSelectTask;
         return null;
+      },
+      builder: (state) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            InkWell(
+              onTap: () => _showTaskPickerSheet(context),
+              borderRadius: BorderRadius.circular(12),
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: S.selectTask,
+                  border: const OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  ),
+                  suffixIcon: const Icon(Icons.arrow_drop_down),
+                  errorText: state.hasError ? state.errorText : null,
+                ),
+                child: _selectedTask != null
+                    ? Row(
+                        children: [
+                          if (emoji != null) ...[
+                            Text(emoji, style: const TextStyle(fontSize: 18)),
+                            const SizedBox(width: 8),
+                          ],
+                          Expanded(
+                            child: Text(
+                              _selectedTask!.nameFr,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Text(
+                        S.selectTask,
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Bottom sheet content for picking a predefined task.
+class _TaskPickerSheet extends StatelessWidget {
+  final List<PredefinedTask> tasks;
+  final List<PredefinedTask> favoriteTasks;
+  final PredefinedTask? selectedTask;
+  final List<HouseholdCategory> customCategories;
+
+  const _TaskPickerSheet({
+    required this.tasks,
+    required this.favoriteTasks,
+    required this.selectedTask,
+    required this.customCategories,
+  });
+
+  /// Categories that have at least one non-favorite task (excluding archivees).
+  List<_CategorySection> _visibleCategories() {
+    final favoriteIds = favoriteTasks.map((t) => t.id).toSet();
+    final allCats = getAllCategories(customCategories);
+    final sections = <_CategorySection>[];
+
+    for (final cat in allCats) {
+      final catTasks = tasks
+          .where((t) =>
+              t.categoryId == cat.id &&
+              !favoriteIds.contains(t.id) &&
+              t.categoryId != 'archivees')
+          .toList();
+      if (catTasks.isNotEmpty) {
+        sections.add(_CategorySection(category: cat, tasks: catTasks));
+      }
+    }
+    return sections;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final sections = _visibleCategories();
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            // Drag handle
+            Padding(
+              padding: const EdgeInsets.only(top: 12, bottom: 8),
+              child: Center(
+                child: Container(
+                  width: 32,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            ),
+            // Title
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  S.selectTask,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+            ),
+            // Scrollable content
+            Expanded(
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  // Favorites section
+                  if (favoriteTasks.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.favorite, size: 18, color: Colors.pinkAccent),
+                          const SizedBox(width: 8),
+                          Text(
+                            S.favoriteTasks,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        for (final task in favoriteTasks)
+                          ChoiceChip(
+                            label: Text(task.nameFr),
+                            selected: selectedTask?.id == task.id,
+                            onSelected: (_) => Navigator.pop(context, task),
+                          ),
+                      ],
+                    ),
+                    const Divider(height: 24),
+                  ],
+                  // Category sections
+                  for (final section in sections) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 4),
+                      child: Row(
+                        children: [
+                          _buildCategoryLeading(section.category, colorScheme),
+                          const SizedBox(width: 8),
+                          Text(
+                            getCategoryLabel(section.category.id, customCategories),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    for (final task in section.tasks)
+                      ListTile(
+                        title: Text(task.nameFr),
+                        trailing: selectedTask?.id == task.id
+                            ? Icon(Icons.check, color: colorScheme.primary)
+                            : null,
+                        onTap: () => Navigator.pop(context, task),
+                        dense: true,
+                        contentPadding: const EdgeInsets.only(left: 8),
+                      ),
+                  ],
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ],
+        );
       },
     );
   }
 
-  /// Build dropdown items: favorites section then category groups
-  List<DropdownMenuItem<PredefinedTask>> _buildDropdownItems(
-    List<PredefinedTask> favorites,
-    Map<String, List<PredefinedTask>> grouped,
-    ColorScheme colorScheme,
-  ) {
-    final items = <DropdownMenuItem<PredefinedTask>>[];
-
-    // Favorites section
-    if (favorites.isNotEmpty) {
-      items.add(
-        DropdownMenuItem<PredefinedTask>(
-          enabled: false,
-          child: Row(
-            children: [
-              Icon(
-                Icons.star,
-                size: 16,
-                color: colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                S.favoriteTasks,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-      for (final task in favorites) {
-        items.add(
-          DropdownMenuItem<PredefinedTask>(
-            value: task,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 24),
-              child: Text(task.nameFr),
-            ),
-          ),
-        );
-      }
+  Widget _buildCategoryLeading(HouseholdCategory category, ColorScheme colorScheme) {
+    if (category.hasEmoji) {
+      return Text(category.emoji!, style: const TextStyle(fontSize: 18));
     }
-
-    // Category groups
-    for (final entry in grouped.entries) {
-      final categoryEmoji = getCategoryEmoji(entry.key, widget.customCategories);
-      items.add(
-        DropdownMenuItem<PredefinedTask>(
-          enabled: false,
-          child: Row(
-            children: [
-              if (categoryEmoji != null)
-                Text(categoryEmoji, style: const TextStyle(fontSize: 16))
-              else
-                Icon(
-                  getCategoryIcon(entry.key, widget.customCategories),
-                  size: 16,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              const SizedBox(width: 8),
-              Text(
-                getCategoryLabel(entry.key, widget.customCategories),
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-
-      for (final task in entry.value) {
-        items.add(
-          DropdownMenuItem<PredefinedTask>(
-            value: task,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 24),
-              child: Text(task.nameFr),
-            ),
-          ),
-        );
-      }
-    }
-
-    return items;
+    return Icon(
+      category.icon,
+      size: 18,
+      color: colorScheme.onSurfaceVariant,
+    );
   }
+}
+
+class _CategorySection {
+  final HouseholdCategory category;
+  final List<PredefinedTask> tasks;
+
+  const _CategorySection({required this.category, required this.tasks});
 }

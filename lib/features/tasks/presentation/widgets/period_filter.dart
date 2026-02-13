@@ -9,6 +9,7 @@ import 'package:dust_count/shared/widgets/category_chip.dart';
 import 'package:dust_count/shared/utils/category_helpers.dart';
 import 'package:dust_count/shared/models/household_category.dart';
 import 'package:dust_count/app/theme/app_colors.dart';
+import 'package:dust_count/core/constants/app_constants.dart';
 
 /// Widget for filtering tasks by period, category, member, and task name
 class PeriodFilter extends ConsumerStatefulWidget {
@@ -107,6 +108,18 @@ class _PeriodFilterState extends ConsumerState<PeriodFilter> {
     ref.read(taskFilterProvider.notifier).state = currentFilter.copyWith(
       performedBy: newPerformedBy,
       clearPerformedBy: newPerformedBy == null,
+    );
+  }
+
+  /// Toggle difficulty filter
+  void _toggleDifficulty(TaskDifficulty difficulty) {
+    final currentFilter = ref.read(taskFilterProvider);
+    final newDifficulty =
+        currentFilter.difficulty == difficulty ? null : difficulty;
+
+    ref.read(taskFilterProvider.notifier).state = currentFilter.copyWith(
+      difficulty: newDifficulty,
+      clearDifficulty: newDifficulty == null,
     );
   }
 
@@ -213,6 +226,41 @@ class _PeriodFilterState extends ConsumerState<PeriodFilter> {
               );
             },
           ),
+          // Difficulty filter
+          const SizedBox(height: 12),
+          Text(
+            S.filterByDifficulty,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ChoiceChip(
+                label: Text('😊', style: TextStyle(fontSize: 20)),
+                selected: filter.difficulty == TaskDifficulty.plaisir,
+                selectedColor: AppColors.difficultyPlaisir.withOpacity(0.3),
+                onSelected: (_) => _toggleDifficulty(TaskDifficulty.plaisir),
+              ),
+              ChoiceChip(
+                label: Text('😐', style: TextStyle(fontSize: 20)),
+                selected: filter.difficulty == TaskDifficulty.reloo,
+                selectedColor: AppColors.difficultyRelou.withOpacity(0.3),
+                onSelected: (_) => _toggleDifficulty(TaskDifficulty.reloo),
+              ),
+              ChoiceChip(
+                label: Text('😩', style: TextStyle(fontSize: 20)),
+                selected: filter.difficulty == TaskDifficulty.infernal,
+                selectedColor: AppColors.difficultyInfernal.withOpacity(0.3),
+                onSelected: (_) => _toggleDifficulty(TaskDifficulty.infernal),
+              ),
+            ],
+          ),
           if (widget.members.length > 1) ...[
             const SizedBox(height: 12),
             Text(
@@ -288,7 +336,7 @@ class _PeriodFilterState extends ConsumerState<PeriodFilter> {
                       TextButton.icon(
                         onPressed: () {
                           ref.read(taskFilterProvider.notifier).state =
-                              filter.copyWith(clearTaskNameFr: true);
+                              filter.copyWith(clearTaskNameFr: true, clearDifficulty: true);
                         },
                         icon: const Icon(Icons.clear, size: 18),
                         label: Text(S.resetFilters),

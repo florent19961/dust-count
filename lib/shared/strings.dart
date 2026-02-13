@@ -113,7 +113,6 @@ abstract final class S {
   static const householdNameTooShort = 'Le nom du foyer est trop court';
   static const householdNameTooLong = 'Le nom du foyer est trop long';
   static const create = 'Créer';
-  static const backToHouseholds = 'Retour aux foyers';
   static const householdNotFound = 'Foyer non trouvé';
   static const errorLoadingHousehold =
       'Erreur lors du chargement du foyer';
@@ -181,6 +180,7 @@ abstract final class S {
   static const allTasks = 'Toutes les tâches';
   static const resetFilters = 'Réinitialiser';
   static const advancedFilters = 'Filtres avancés';
+  static const filterByDifficulty = 'Filtrer par pénibilité';
   static const clearFilters = 'Effacer les filtres';
   static const taskLogged = 'Tâche enregistrée avec succès';
   static const taskDeleted = 'Tâche supprimée avec succès';
@@ -191,37 +191,35 @@ abstract final class S {
   static const categoryCuisine = 'Cuisine';
   static const categoryMenage = 'Ménage';
   static const categoryLinge = 'Linge';
-  static const categoryCourses = 'Courses';
+  static const categoryCourses = 'Courses & repas';
   static const categoryDivers = 'Divers';
   static const categoryArchivees = 'Archivées';
   static const selectTask = 'Sélectionner une tâche';
   static const favoriteTasks = 'Tâches favorites';
 
-  // Difficulties
-  static const difficultyPlaisir = 'Plaisir';
-  static const difficultyReloo = 'Relou';
-  static const difficultyInfernal = 'Infernal';
 
   // Predefined task names
-  static const taskVacuum = "Passer l'aspirateur";
-  static const taskMopFloor = 'Passer la serpillère';
-  static const taskCleanBathroom = 'Nettoyer la salle de bain';
-  static const taskCleanToilet = 'Nettoyer les toilettes';
+  static const taskVacuum = 'Aspirateur';
+  static const taskMopFloor = 'Serpillère';
   static const taskDustSurfaces = 'Dépoussiérer';
-  static const taskDoDishes = 'Faire la vaisselle';
-  static const taskDishwasher = 'Vider/remplir le lave-vaisselle';
-  static const taskCleanCountertops = 'Nettoyer le plan de travail';
-  static const taskCookMeal = 'Cuisiner un repas';
-  static const taskGroceryShopping = 'Faire les courses';
-  static const taskDoLaundry = 'Lancer une machine de linge';
-  static const taskHangLaundry = 'Étendre le linge';
-  static const taskIronClothes = 'Repasser';
-  static const taskFoldLaundry = 'Plier et ranger le linge';
+  static const taskCleanWindows = 'Vitres';
+  static const taskCleanToilet = 'Nettoyer toilettes';
+  static const taskCleanBathroom = 'Nettoyer salle de bain';
   static const taskTakeOutTrash = 'Sortir les poubelles';
-  static const taskCleanBalcony = 'Nettoyer le balcon/terrasse';
+  static const taskDoDishes = 'Faire la vaisselle';
+  static const taskDishwasher = 'Vider/remplir lave-vaisselle';
+  static const taskCleanCountertops = 'Nettoyer plan de travail';
+  static const taskCleanOvenMicrowave = 'Nettoyer four/micro-ondes';
+  static const taskCleanFridge = 'Nettoyer frigo';
+  static const taskDoLaundry = 'Lancer machine à laver';
+  static const taskHangLaundry = 'Étendre le linge';
+  static const taskFoldLaundry = 'Plier et ranger le linge';
+  static const taskGroceryShopping = 'Faire les courses';
+  static const taskCookMeal = 'Cuisiner';
   static const taskWaterPlants = 'Arroser les plantes';
-  static const taskSortMail = 'Trier le courrier/administratif';
-  static const taskManageBills = 'Gérer les factures';
+  static const taskDIYRepairs = 'Bricolage/réparations';
+  static const taskAdminTasks = 'Gestion administratif';
+  static const taskVacationPlanning = 'Préparation vacances';
 
   // Predefined task management
   static const managePredefinedTasks = 'Gérer les tâches prédéfinies';
@@ -238,14 +236,14 @@ abstract final class S {
 
   static const editPredefinedTask = 'Modifier la tâche';
   static const taskUpdatedInPredefined = 'Tâche mise à jour';
-  static const quickTask = 'Tâche rapide';
+  static const quickTask = 'Tâche favorite';
 
   // Quick tasks configuration
-  static const quickTasksConfig = 'Mes tâches rapides';
+  static const quickTasksConfig = 'Mes tâches favorites';
   static const quickTasksDescription =
       'Choisissez et ordonnez les tâches affichées en accès rapide';
   static const maxQuickTasksReached =
-      'Maximum de 12 tâches rapides atteint';
+      'Maximum de 12 tâches favorites atteint';
 
   // Dashboard
   static const dashboard = 'Tableau de bord';
@@ -324,9 +322,9 @@ abstract final class S {
   static const noTasksYet = 'Aucune tâche pour le moment';
   static const addFirstTask =
       'Ajoutez votre première tâche pour commencer !';
-  static const filterThisWeek = 'Cette semaine';
-  static const filterThisMonth = 'Ce mois-ci';
-  static const filterCustom = 'Personnalisée';
+  static const filterThisWeek = 'Semaine';
+  static const filterThisMonth = 'Mois';
+  static const filterCustom = 'Période';
   static const selectPredefinedTask =
       'Sélectionnez une tâche prédéfinie';
   static const taskHistoryPlaceholder =
@@ -352,8 +350,6 @@ abstract final class S {
   static const timerConfirmQuit = 'Quitter le chronomètre ?';
   static const timerConfirmQuitMessage =
       'Le temps chronométré sera perdu.';
-  static const pleaseSelectTaskFirst =
-      "Veuillez d'abord sélectionner une tâche";
 
   // Edit task
   static const editTask = 'Modifier la tâche';
@@ -431,6 +427,7 @@ abstract final class S {
       'Cette catégorie vide sera définitivement supprimée.';
   static const categoryDeleted = 'Catégorie supprimée';
   static const addTaskToCategory = 'Ajouter une tâche';
+  static const dropToDelete = 'Déposer pour supprimer';
 
   static String taskAddedError(String error) =>
       "Erreur lors de l'ajout de la tâche : $error";
@@ -451,6 +448,16 @@ abstract final class S {
       'Ce nom est déjà utilisé par un membre du foyer "$householdName"';
 
   static String createdAt(String date) => 'Créée le $date';
+
+  // Create household stepper
+  static const setupTasks = 'Personnaliser les tâches';
+  static const setupTasksDescription =
+      'Ajoutez, modifiez ou supprimez des tâches selon vos besoins';
+  static const householdNameStep = 'Nom du foyer';
+  static const skipStep = 'Passer';
+  static const createHouseholdAction = 'Créer le foyer';
+  static const nextStep = 'Suivant';
+  static String taskCount(int n) => '$n tâche${n > 1 ? 's' : ''}';
 
   // Date formatting helpers (replace intl DateFormat)
 

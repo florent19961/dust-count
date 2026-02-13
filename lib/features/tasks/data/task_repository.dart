@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dust_count/core/constants/app_constants.dart';
 import 'package:dust_count/shared/models/task_log.dart';
 
 final taskRepositoryProvider = Provider<TaskRepository>((ref) {
@@ -56,6 +57,7 @@ class TaskRepository {
     String? categoryId,
     String? performedBy,
     String? taskNameFr,
+    TaskDifficulty? difficulty,
   }) {
     try {
       Query<Map<String, dynamic>> query = _taskLogsRef(householdId);
@@ -82,6 +84,10 @@ class TaskRepository {
         query = query.where('taskNameFr', isEqualTo: taskNameFr);
       }
 
+      if (difficulty != null) {
+        query = query.where('difficulty', isEqualTo: difficulty.name);
+      }
+
       query = query.orderBy('date', descending: true);
 
       return query.snapshots().map((snapshot) {
@@ -102,6 +108,7 @@ class TaskRepository {
     DateTime? endDate,
     String? categoryId,
     String? performedBy,
+    TaskDifficulty? difficulty,
   }) async {
     try {
       Query<Map<String, dynamic>> query = _taskLogsRef(householdId);
@@ -122,6 +129,10 @@ class TaskRepository {
 
       if (performedBy != null) {
         query = query.where('performedBy', isEqualTo: performedBy);
+      }
+
+      if (difficulty != null) {
+        query = query.where('difficulty', isEqualTo: difficulty.name);
       }
 
       query = query.orderBy('date', descending: true);

@@ -7,18 +7,20 @@ import 'package:dust_count/app/theme/app_colors.dart';
 /// Built-in categories available in every household.
 const List<HouseholdCategory> builtInCategories = [
   HouseholdCategory(
-    id: 'cuisine',
-    labelFr: 'Cuisine',
-    iconCodePoint: 0xe56c, // Icons.restaurant
-    colorValue: 0xFFE8A87C,
-    isBuiltIn: true,
-  ),
-  HouseholdCategory(
     id: 'menage',
     labelFr: 'Ménage',
     iconCodePoint: 0xf0ff, // Icons.cleaning_services
     colorValue: 0xFF7CB5D4,
     isBuiltIn: true,
+    emoji: '🧹',
+  ),
+  HouseholdCategory(
+    id: 'cuisine',
+    labelFr: 'Cuisine',
+    iconCodePoint: 0xe56c, // Icons.restaurant
+    colorValue: 0xFFE8A87C,
+    isBuiltIn: true,
+    emoji: '🍳',
   ),
   HouseholdCategory(
     id: 'linge',
@@ -26,13 +28,15 @@ const List<HouseholdCategory> builtInCategories = [
     iconCodePoint: 0xe52c, // Icons.local_laundry_service
     colorValue: 0xFFB088D4,
     isBuiltIn: true,
+    emoji: '👕',
   ),
   HouseholdCategory(
     id: 'courses',
-    labelFr: 'Courses',
+    labelFr: 'Courses & repas',
     iconCodePoint: 0xe8cc, // Icons.shopping_cart
     colorValue: 0xFF6BBF7A,
     isBuiltIn: true,
+    emoji: '🛒',
   ),
   HouseholdCategory(
     id: 'divers',
@@ -40,6 +44,7 @@ const List<HouseholdCategory> builtInCategories = [
     iconCodePoint: 0xe8ba, // Icons.handyman
     colorValue: 0xFF5B9B8A,
     isBuiltIn: true,
+    emoji: '📦',
   ),
 ];
 
@@ -50,6 +55,7 @@ const HouseholdCategory archiveesCategory = HouseholdCategory(
   iconCodePoint: 0xe149, // Icons.archive
   colorValue: 0xFF938F99,
   isBuiltIn: true,
+  emoji: '📂',
 );
 
 /// Returns all categories: built-in + custom (excluding archivees).

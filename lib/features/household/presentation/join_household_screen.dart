@@ -112,8 +112,17 @@ class _JoinHouseholdScreenState extends ConsumerState<JoinHouseholdScreen> {
 
     if (!mounted) return;
 
-    // Set as current household just before navigation — after all Firestore
-    // writes have propagated, avoiding permission-denied on snapshot listeners.
+    // Attendre que Firestore ait propagé le memberIds avant de naviguer,
+    // sinon les listeners déclenchés par currentHouseholdIdProvider
+    // peuvent recevoir permission-denied.
+    final householdRepo = ref.read(householdRepositoryProvider);
+    final user = ref.read(currentUserProvider).value;
+    if (user != null) {
+      await _waitForMembership(householdRepo, householdId, user.userId);
+    }
+
+    if (!mounted) return;
+
     ref.read(currentHouseholdIdProvider.notifier).state = householdId;
     context.go('/household/$householdId');
   }
@@ -277,6 +286,22 @@ class _JoinHouseholdScreenState extends ConsumerState<JoinHouseholdScreen> {
         ),
       );
     }
+  }
+
+  /// Polls Firestore until membership is confirmed (max ~3s)
+  Future<void> _waitForMembership(
+    HouseholdRepository repo,
+    String householdId,
+    String userId,
+  ) async {
+    for (int i = 0; i < 6; i++) {
+      final household = await repo.getHousehold(householdId);
+      if (household != null && household.memberIds.contains(userId)) {
+        return;
+      }
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+    // Timeout — on continue quand même, les retry providers prendront le relais
   }
 
   @override
