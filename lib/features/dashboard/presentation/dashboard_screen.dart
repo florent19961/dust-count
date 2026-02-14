@@ -10,6 +10,7 @@ import 'package:dust_count/core/constants/app_constants.dart';
 import 'package:dust_count/app/theme/app_colors.dart';
 import 'package:dust_count/features/dashboard/domain/dashboard_providers.dart';
 import 'package:dust_count/features/dashboard/presentation/widgets/time_distribution_chart.dart';
+import 'package:dust_count/features/dashboard/presentation/widgets/category_breakdown_chart.dart';
 import 'package:dust_count/features/dashboard/presentation/widgets/cumulative_evolution_chart.dart';
 import 'package:dust_count/features/dashboard/presentation/widgets/leaderboard_widget.dart';
 
@@ -54,6 +55,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     memberNames: memberNames,
                   );
                 },
+                loading: () => _buildLoadingState(),
+                error: (error, stack) => _buildErrorState(
+                  error.toString(),
+                ),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: _buildChartSection(
+              title: S.categoryBreakdown,
+              icon: Icons.bar_chart,
+              child: ref.watch(categoryBreakdownProvider).when(
+                data: (entries) => CategoryBreakdownChart(
+                  entries: entries,
+                  customCategories: widget.household.customCategories,
+                ),
                 loading: () => _buildLoadingState(),
                 error: (error, stack) => _buildErrorState(
                   error.toString(),

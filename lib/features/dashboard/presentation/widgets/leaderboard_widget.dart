@@ -139,7 +139,7 @@ class _LeaderboardRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  _formatMinutes(entry.totalMinutes),
+                  S.formatMinutes(entry.totalMinutes),
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.primary,
@@ -240,16 +240,4 @@ class _LeaderboardRow extends StatelessWidget {
     );
   }
 
-  /// Format minutes as "Xh Ym" or "Ym"
-  String _formatMinutes(int minutes) {
-    if (minutes >= 60) {
-      final hours = minutes ~/ 60;
-      final remainingMinutes = minutes % 60;
-      if (remainingMinutes > 0) {
-        return '${hours}h ${remainingMinutes}m';
-      }
-      return '${hours}h';
-    }
-    return '${minutes}m';
-  }
 }

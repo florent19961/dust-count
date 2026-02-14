@@ -10,6 +10,7 @@ import 'package:dust_count/features/tasks/presentation/widgets/predefined_task_s
 import 'package:dust_count/features/tasks/presentation/task_timer_screen.dart';
 import 'package:dust_count/shared/widgets/difficulty_badge.dart';
 import 'package:dust_count/features/household/domain/household_providers.dart';
+import 'package:dust_count/features/dashboard/domain/dashboard_providers.dart';
 
 /// Screen for adding a new task log
 ///
@@ -213,6 +214,10 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     state.when(
       data: (_) {
         if (mounted) {
+          ref.invalidate(minutesPerMemberProvider);
+          ref.invalidate(dailyCumulativeProvider);
+          ref.invalidate(leaderboardProvider);
+          ref.invalidate(categoryBreakdownProvider);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(S.taskAddedSuccess),

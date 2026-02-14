@@ -273,6 +273,14 @@ class _HouseholdHomeScreenState extends ConsumerState<HouseholdHomeScreen> {
                 style: Theme.of(context).textTheme.bodySmall,
                 textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () {
+                  ref.invalidate(currentHouseholdProvider);
+                },
+                icon: const Icon(Icons.refresh),
+                label: Text(S.retry),
+              ),
             ],
           ),
         ),
@@ -296,6 +304,7 @@ class _HouseholdHomeScreenState extends ConsumerState<HouseholdHomeScreen> {
             ref.invalidate(minutesPerMemberProvider);
             ref.invalidate(dailyCumulativeProvider);
             ref.invalidate(leaderboardProvider);
+            ref.invalidate(categoryBreakdownProvider);
           }
         },
         destinations: [

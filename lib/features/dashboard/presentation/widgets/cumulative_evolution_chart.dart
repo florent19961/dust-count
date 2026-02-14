@@ -77,7 +77,7 @@ class CumulativeEvolutionChart extends ConsumerWidget {
                       reservedSize: 42,
                       getTitlesWidget: (value, meta) {
                         return Text(
-                          _formatMinutes(value.toInt()),
+                          S.formatMinutes(value.toInt()),
                           style: theme.textTheme.bodySmall,
                         );
                       },
@@ -130,6 +130,8 @@ class CumulativeEvolutionChart extends ConsumerWidget {
                 lineTouchData: LineTouchData(
                   enabled: true,
                   touchTooltipData: LineTouchTooltipData(
+                    fitInsideHorizontally: true,
+                    fitInsideVertically: true,
                     getTooltipItems: (touchedSpots) {
                       return touchedSpots.map((spot) {
                         final userId = dailyCumulativeData.keys.elementAt(
@@ -137,7 +139,7 @@ class CumulativeEvolutionChart extends ConsumerWidget {
                         );
                         final displayName = memberNames[userId] ?? 'Unknown';
                         return LineTooltipItem(
-                          '$displayName\n${_formatMinutes(spot.y.toInt())}',
+                          '$displayName\n${S.formatMinutes(spot.y.toInt())}',
                           TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -284,14 +286,6 @@ class CumulativeEvolutionChart extends ConsumerWidget {
   /// Format date as YYYY-MM-DD for consistent keys
   String _formatDateKey(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-  }
-
-  /// Format minutes as "Xh" or "Ym"
-  String _formatMinutes(int minutes) {
-    if (minutes >= 60) {
-      return '${minutes ~/ 60}h';
-    }
-    return '${minutes}m';
   }
 
   /// Get color palette for chart lines

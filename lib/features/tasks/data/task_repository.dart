@@ -254,6 +254,12 @@ class TaskRepository {
     }
   }
 
+  /// Verifies read access to a household's taskLogs subcollection.
+  /// Throws [FirebaseException] if access is denied.
+  Future<void> verifyTaskLogsAccess(String householdId) async {
+    await _taskLogsRef(householdId).limit(1).get();
+  }
+
   /// Migrates task logs category for a given French task name
   /// Processes in batches of 500 (Firestore batch limit)
   Future<void> migrateTaskLogsCategory(

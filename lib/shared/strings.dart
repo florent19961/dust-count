@@ -479,4 +479,22 @@ abstract final class S {
   static String formatDateShort(DateTime d) {
     return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}';
   }
+
+  /// Format minutes as "Xh Ym", "Xh", or "Ym"
+  static String formatMinutes(int minutes) {
+    if (minutes >= 60) {
+      final hours = minutes ~/ 60;
+      final remainingMinutes = minutes % 60;
+      if (remainingMinutes > 0) {
+        return '${hours}h ${remainingMinutes}m';
+      }
+      return '${hours}h';
+    }
+    return '${minutes}m';
+  }
+
+  // Category breakdown chart
+  static const categoryBreakdown = 'Répartition par catégorie';
+  static const viewMinutes = 'Minutes';
+  static const viewTaskCount = 'Nombre';
 }

@@ -30,10 +30,18 @@ class JoinNameConflict extends JoinResult {
 }
 
 /// Provider for the active tab index in HouseholdHomeScreen
-final householdTabIndexProvider = StateProvider<int>((ref) => 0);
+final householdTabIndexProvider = StateProvider<int>((ref) {
+  // Reset to 0 when the authenticated user changes (logout / login)
+  ref.watch(authStateProvider.select((state) => state.value?.uid));
+  return 0;
+});
 
 /// Provider for the currently selected household ID
-final currentHouseholdIdProvider = StateProvider<String?>((ref) => null);
+final currentHouseholdIdProvider = StateProvider<String?>((ref) {
+  // Reset to null when the authenticated user changes (logout / login)
+  ref.watch(authStateProvider.select((state) => state.value?.uid));
+  return null;
+});
 
 /// Provider that watches the current household document
 final currentHouseholdProvider = StreamProvider<Household?>((ref) {

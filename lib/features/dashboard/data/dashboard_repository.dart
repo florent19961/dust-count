@@ -35,6 +35,21 @@ class LeaderboardEntry {
   }
 }
 
+/// Entry showing per-category breakdown for a single member
+class CategoryBreakdownEntry {
+  final String userId;
+  final String displayName;
+  final Map<String, int> minutesPerCategory;
+  final Map<String, int> countPerCategory;
+
+  const CategoryBreakdownEntry({
+    required this.userId,
+    required this.displayName,
+    required this.minutesPerCategory,
+    required this.countPerCategory,
+  });
+}
+
 /// Repository for aggregating and computing dashboard statistics
 class DashboardRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -46,7 +61,8 @@ class DashboardRepository {
         .collection('taskLogs');
   }
 
-  /// Fetches task logs from Firestore filtered by date range and optional filters
+  /// Fetches task logs from Firestore filtered by date range and optional filters.
+  /// Falls back to local cache when the server is unreachable.
   Future<List<TaskLog>> _fetchTaskLogs(
     String householdId,
     DateTime start,
@@ -74,7 +90,16 @@ class DashboardRepository {
         .where('date', isLessThanOrEqualTo: Timestamp.fromDate(end))
         .orderBy('date', descending: true);
 
-    final snapshot = await query.get();
+    QuerySnapshot<Map<String, dynamic>> snapshot;
+    try {
+      snapshot = await query.get();
+    } on FirebaseException catch (e) {
+      if (e.code == 'unavailable') {
+        snapshot = await query.get(const GetOptions(source: Source.cache));
+      } else {
+        rethrow;
+      }
+    }
 
     return snapshot.docs
         .map((doc) => TaskLog.fromFirestore(
@@ -205,6 +230,62 @@ class DashboardRepository {
 
     // Sort by total minutes (descending)
     entries.sort((a, b) => b.totalMinutes.compareTo(a.totalMinutes));
+
+    return entries;
+  }
+
+  /// Get per-category breakdown for each member
+  Future<List<CategoryBreakdownEntry>> getCategoryBreakdown(
+    String householdId,
+    DateTime start,
+    DateTime end, {
+    String? categoryId,
+    String? taskNameFr,
+    TaskDifficulty? difficulty,
+  }) async {
+    final logs = await _fetchTaskLogs(
+      householdId,
+      start,
+      end,
+      categoryId: categoryId,
+      taskNameFr: taskNameFr,
+      difficulty: difficulty,
+    );
+
+    final Map<String, List<TaskLog>> logsByUser = {};
+    for (final log in logs) {
+      logsByUser.putIfAbsent(log.performedBy, () => []).add(log);
+    }
+
+    final List<CategoryBreakdownEntry> entries = [];
+    for (final entry in logsByUser.entries) {
+      final userId = entry.key;
+      final userLogs = entry.value;
+
+      final minutesPerCategory = <String, int>{};
+      final countPerCategory = <String, int>{};
+
+      for (final log in userLogs) {
+        minutesPerCategory[log.categoryId] =
+            (minutesPerCategory[log.categoryId] ?? 0) + log.durationMinutes;
+        countPerCategory[log.categoryId] =
+            (countPerCategory[log.categoryId] ?? 0) + 1;
+      }
+
+      entries.add(CategoryBreakdownEntry(
+        userId: userId,
+        displayName: userLogs.first.performedByName,
+        minutesPerCategory: minutesPerCategory,
+        countPerCategory: countPerCategory,
+      ));
+    }
+
+    // Sort by total minutes descending
+    entries.sort((a, b) {
+      final totalA = a.minutesPerCategory.values.fold<int>(0, (acc, v) => acc + v);
+      final totalB = b.minutesPerCategory.values.fold<int>(0, (acc, v) => acc + v);
+      return totalB.compareTo(totalA);
+    });
 
     return entries;
   }

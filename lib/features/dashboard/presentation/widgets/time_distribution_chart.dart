@@ -171,7 +171,7 @@ class _TimeDistributionChartState
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  '(${_formatMinutes(minutes)})',
+                  '(${S.formatMinutes(minutes)})',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurface.withOpacity(0.7),
                   ),
@@ -200,16 +200,4 @@ class _TimeDistributionChartState
     ];
   }
 
-  /// Format minutes as "Xh Ym" or "Ym"
-  String _formatMinutes(int minutes) {
-    if (minutes >= 60) {
-      final hours = minutes ~/ 60;
-      final remainingMinutes = minutes % 60;
-      if (remainingMinutes > 0) {
-        return '${hours}h ${remainingMinutes}m';
-      }
-      return '${hours}h';
-    }
-    return '${minutes}m';
-  }
 }

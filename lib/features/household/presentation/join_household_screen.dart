@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:dust_count/features/auth/domain/auth_providers.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dust_count/features/household/data/household_repository.dart';
 import 'package:dust_count/features/household/domain/household_providers.dart';
+import 'package:dust_count/features/tasks/data/task_repository.dart';
 
 /// Screen for joining a household using an invite code
 class JoinHouseholdScreen extends ConsumerStatefulWidget {
@@ -288,20 +290,25 @@ class _JoinHouseholdScreenState extends ConsumerState<JoinHouseholdScreen> {
     }
   }
 
-  /// Polls Firestore until membership is confirmed (max ~3s)
+  /// Polls Firestore until subcollection access is granted (max ~5s)
   Future<void> _waitForMembership(
     HouseholdRepository repo,
     String householdId,
     String userId,
   ) async {
-    for (int i = 0; i < 6; i++) {
-      final household = await repo.getHousehold(householdId);
-      if (household != null && household.memberIds.contains(userId)) {
-        return;
+    final taskRepo = ref.read(taskRepositoryProvider);
+    for (int i = 0; i < 10; i++) {
+      try {
+        await taskRepo.verifyTaskLogsAccess(householdId);
+        return; // Access granted — security rules see the updated memberIds
+      } on FirebaseException catch (e) {
+        if (e.code != 'permission-denied') return; // Other Firebase error — proceed
+        await Future.delayed(const Duration(milliseconds: 500));
+      } catch (_) {
+        return; // Non-Firebase error — proceed
       }
-      await Future.delayed(const Duration(milliseconds: 500));
     }
-    // Timeout — on continue quand même, les retry providers prendront le relais
+    // Timeout after ~5s — proceed anyway, stream retry logic will take over
   }
 
   @override

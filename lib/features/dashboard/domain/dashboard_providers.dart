@@ -163,6 +163,27 @@ final dailyCumulativeProvider =
   ));
 });
 
+/// Provider for category breakdown
+final categoryBreakdownProvider =
+    FutureProvider<List<CategoryBreakdownEntry>>((ref) async {
+  final householdId = ref.watch(currentHouseholdIdProvider);
+  if (householdId == null) {
+    return [];
+  }
+
+  final filter = ref.watch(dashboardFilterProvider);
+  final repository = ref.watch(dashboardRepositoryProvider);
+
+  return _retryOnPermissionDenied(() => repository.getCategoryBreakdown(
+    householdId,
+    filter.effectiveStartDate,
+    filter.effectiveEndDate,
+    categoryId: filter.categoryId,
+    taskNameFr: filter.taskNameFr,
+    difficulty: filter.difficulty,
+  ));
+});
+
 /// Provider for leaderboard entries
 final leaderboardProvider =
     FutureProvider<List<LeaderboardEntry>>((ref) async {
