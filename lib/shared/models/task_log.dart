@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../core/constants/app_constants.dart';
+import 'package:dust_count/core/constants/app_constants.dart';
+import 'package:dust_count/shared/utils/category_helpers.dart';
 
 /// Task log entry model
 class TaskLog {
@@ -54,17 +55,6 @@ class TaskLog {
     required this.createdAt,
   });
 
-  /// Migrate legacy category names to current values
-  static String _migrateCategory(String categoryName) {
-    switch (categoryName) {
-      case 'exterieur':
-      case 'administratif':
-        return 'divers';
-      default:
-        return categoryName;
-    }
-  }
-
   /// Create TaskLog from Firestore document
   factory TaskLog.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data()!;
@@ -73,7 +63,7 @@ class TaskLog {
       taskName: data['taskName'] as String,
       taskNameFr: data['taskNameFr'] as String?,
       taskNameEn: data['taskNameEn'] as String?,
-      categoryId: _migrateCategory(data['category'] as String),
+      categoryId: migrateCategory(data['category'] as String),
       performedBy: data['performedBy'] as String,
       performedByName: data['performedByName'] as String,
       date: (data['date'] as Timestamp).toDate(),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dust_count/shared/strings.dart';
+import 'package:dust_count/app/theme/app_colors.dart';
 
 /// Pie chart showing time distribution across household members
 class TimeDistributionChart extends ConsumerStatefulWidget {
@@ -93,7 +94,7 @@ class _TimeDistributionChartState
   /// Build pie chart sections
   List<PieChartSectionData> _buildSections(int totalMinutes) {
     final entries = widget.minutesPerMember.entries.toList();
-    final colors = _getColors(entries.length);
+    final colors = AppColors.chartColors;
 
     return entries.asMap().entries.map((entry) {
       final index = entry.key;
@@ -128,7 +129,7 @@ class _TimeDistributionChartState
   /// Build legend showing members and their totals
   Widget _buildLegend(ThemeData theme) {
     final entries = widget.minutesPerMember.entries.toList();
-    final colors = _getColors(entries.length);
+    final colors = AppColors.chartColors;
 
     return Wrap(
       spacing: 16,
@@ -184,20 +185,5 @@ class _TimeDistributionChartState
     );
   }
 
-  /// Get color palette for chart sections
-  List<Color> _getColors(int count) {
-    return [
-      const Color(0xFF6366F1), // Indigo
-      const Color(0xFFEC4899), // Pink
-      const Color(0xFF10B981), // Emerald
-      const Color(0xFFF59E0B), // Amber
-      const Color(0xFF8B5CF6), // Violet
-      const Color(0xFF06B6D4), // Cyan
-      const Color(0xFFEF4444), // Red
-      const Color(0xFF14B8A6), // Teal
-      const Color(0xFFF97316), // Orange
-      const Color(0xFF3B82F6), // Blue
-    ];
-  }
 
 }

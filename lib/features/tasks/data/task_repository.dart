@@ -265,7 +265,7 @@ class TaskRepository {
   Future<void> migrateTaskLogsCategory(
     String householdId,
     String taskNameFr, {
-    String targetCategoryId = 'archivees',
+    String targetCategoryId = AppConstants.archivedCategoryId,
   }) async {
     try {
       final snapshot = await _taskLogsRef(householdId)

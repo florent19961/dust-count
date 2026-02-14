@@ -1,7 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dust_count/shared/models/filter_period.dart';
 import 'package:dust_count/core/constants/app_constants.dart';
+import 'package:dust_count/core/utils/firestore_retry.dart';
 import 'package:dust_count/features/dashboard/data/dashboard_repository.dart';
 import 'package:dust_count/features/household/domain/household_providers.dart';
 
@@ -105,22 +105,6 @@ final dashboardFilterProvider =
   return const DashboardFilter(period: FilterPeriod.thisWeek);
 });
 
-/// Retries a Firestore future up to [maxRetries] times on permission-denied
-Future<T> _retryOnPermissionDenied<T>(Future<T> Function() fn, {int maxRetries = 2}) async {
-  for (int attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await fn();
-    } on FirebaseException catch (e) {
-      if (e.code == 'permission-denied' && attempt < maxRetries) {
-        await Future.delayed(const Duration(seconds: 1));
-        continue;
-      }
-      rethrow;
-    }
-  }
-  throw StateError('Unreachable');
-}
-
 /// Provider for total minutes per member
 final minutesPerMemberProvider =
     FutureProvider<Map<String, int>>((ref) async {
@@ -132,7 +116,7 @@ final minutesPerMemberProvider =
   final filter = ref.watch(dashboardFilterProvider);
   final repository = ref.watch(dashboardRepositoryProvider);
 
-  return _retryOnPermissionDenied(() => repository.getMinutesPerMember(
+  return retryOnPermissionDenied(() => repository.getMinutesPerMember(
     householdId,
     filter.effectiveStartDate,
     filter.effectiveEndDate,
@@ -153,7 +137,7 @@ final dailyCumulativeProvider =
   final filter = ref.watch(dashboardFilterProvider);
   final repository = ref.watch(dashboardRepositoryProvider);
 
-  return _retryOnPermissionDenied(() => repository.getDailyMinutesPerMember(
+  return retryOnPermissionDenied(() => repository.getDailyMinutesPerMember(
     householdId,
     filter.effectiveStartDate,
     filter.effectiveEndDate,
@@ -174,7 +158,7 @@ final categoryBreakdownProvider =
   final filter = ref.watch(dashboardFilterProvider);
   final repository = ref.watch(dashboardRepositoryProvider);
 
-  return _retryOnPermissionDenied(() => repository.getCategoryBreakdown(
+  return retryOnPermissionDenied(() => repository.getCategoryBreakdown(
     householdId,
     filter.effectiveStartDate,
     filter.effectiveEndDate,
@@ -195,7 +179,7 @@ final leaderboardProvider =
   final filter = ref.watch(dashboardFilterProvider);
   final repository = ref.watch(dashboardRepositoryProvider);
 
-  return _retryOnPermissionDenied(() => repository.getLeaderboard(
+  return retryOnPermissionDenied(() => repository.getLeaderboard(
     householdId,
     filter.effectiveStartDate,
     filter.effectiveEndDate,

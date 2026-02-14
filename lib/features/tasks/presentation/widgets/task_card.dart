@@ -4,6 +4,9 @@ import 'package:dust_count/shared/models/household.dart';
 import 'package:dust_count/shared/widgets/difficulty_badge.dart';
 import 'package:dust_count/app/theme/app_colors.dart';
 import 'package:dust_count/shared/strings.dart';
+import 'package:dust_count/core/constants/app_constants.dart';
+import 'package:dust_count/shared/utils/string_helpers.dart';
+import 'package:dust_count/shared/utils/member_helpers.dart' as member_helpers;
 
 /// Reusable card widget for displaying task log in a list
 class TaskCard extends StatelessWidget {
@@ -23,27 +26,12 @@ class TaskCard extends StatelessWidget {
     super.key,
   });
 
-  /// Get initials from performer name
-  String get _initials {
-    final parts = taskLog.performedByName.split(' ');
-    if (parts.isEmpty) return '?';
-    if (parts.length == 1) {
-      return parts[0].substring(0, 1).toUpperCase();
-    }
-    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-  }
-
   /// Get color for member based on stable colorIndex
   Color _getMemberColor() {
     if (household == null) {
       return AppColors.memberColors[0];
     }
-
-    final member = household!.members
-        .where((m) => m.userId == taskLog.performedBy)
-        .firstOrNull;
-
-    return AppColors.getMemberColor(member?.colorIndex ?? 0);
+    return member_helpers.getMemberColor(household!, taskLog.performedBy);
   }
 
   /// Category color map for left border (hardcoded dark colors for built-in categories)
@@ -53,7 +41,7 @@ class TaskCard extends StatelessWidget {
     'linge': Color(0xFF6A1B9A), // Dark purple
     'courses': Color(0xFFF57F17), // Dark yellow
     'divers': Color(0xFF00695C), // Teal dark
-    'archivees': Color(0xFF938F99), // Gray
+    AppConstants.archivedCategoryId: Color(0xFF938F99), // Gray
   };
 
   /// Get category color for left border
@@ -89,7 +77,7 @@ class TaskCard extends StatelessWidget {
                   radius: 20,
                   backgroundColor: _getMemberColor(),
                   child: Text(
-                    _initials,
+                    getInitials(taskLog.performedByName),
                     style: TextStyle(
                       color: theme.colorScheme.onPrimary,
                       fontWeight: FontWeight.bold,

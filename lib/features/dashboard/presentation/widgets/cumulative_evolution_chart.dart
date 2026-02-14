@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dust_count/shared/strings.dart';
+import 'package:dust_count/app/theme/app_colors.dart';
 
 /// Line chart showing cumulative minutes over time per member
 class CumulativeEvolutionChart extends ConsumerWidget {
@@ -165,7 +166,7 @@ class CumulativeEvolutionChart extends ConsumerWidget {
     List<DateTime> allDates,
     ThemeData theme,
   ) {
-    final colors = _getColors(dailyCumulativeData.length);
+    final colors = AppColors.chartColors;
     final members = dailyCumulativeData.keys.toList();
 
     return members.asMap().entries.map((entry) {
@@ -206,7 +207,7 @@ class CumulativeEvolutionChart extends ConsumerWidget {
 
   /// Build legend showing members
   Widget _buildLegend(ThemeData theme) {
-    final colors = _getColors(dailyCumulativeData.length);
+    final colors = AppColors.chartColors;
     final members = dailyCumulativeData.keys.toList();
 
     return Wrap(
@@ -288,19 +289,4 @@ class CumulativeEvolutionChart extends ConsumerWidget {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
-  /// Get color palette for chart lines
-  List<Color> _getColors(int count) {
-    return [
-      const Color(0xFF6366F1), // Indigo
-      const Color(0xFFEC4899), // Pink
-      const Color(0xFF10B981), // Emerald
-      const Color(0xFFF59E0B), // Amber
-      const Color(0xFF8B5CF6), // Violet
-      const Color(0xFF06B6D4), // Cyan
-      const Color(0xFFEF4444), // Red
-      const Color(0xFF14B8A6), // Teal
-      const Color(0xFFF97316), // Orange
-      const Color(0xFF3B82F6), // Blue
-    ];
-  }
 }

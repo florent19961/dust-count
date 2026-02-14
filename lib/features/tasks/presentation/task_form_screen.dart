@@ -221,7 +221,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(S.taskAddedSuccess),
-              backgroundColor: Colors.green,
+              backgroundColor: Theme.of(context).colorScheme.primary,
             ),
           );
           if (widget.onTaskAdded != null) {
@@ -243,7 +243,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               content: Text(
                 S.taskAddedError(error.toString()),
               ),
-              backgroundColor: Colors.red,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
         }
@@ -257,7 +257,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         ref.watch(memberPreferencesProvider(widget.household.id));
     final quickTaskIds = prefsAsync.value?.quickTaskIds;
     final visibleTasks = widget.household.predefinedTasks
-        .where((t) => t.categoryId != 'archivees')
+        .where((t) => t.categoryId != AppConstants.archivedCategoryId)
         .toList();
 
     return Form(

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dust_count/shared/strings.dart';
+import 'package:dust_count/shared/utils/string_helpers.dart';
+import 'package:dust_count/shared/exceptions/name_conflict_exception.dart';
 
 import 'package:dust_count/features/auth/domain/auth_providers.dart';
 
@@ -35,7 +37,7 @@ class ProfileScreen extends ConsumerWidget {
                         radius: 40,
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         child: Text(
-                          _getInitials(user.displayName),
+                          getInitials(user.displayName),
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
@@ -162,16 +164,20 @@ class ProfileScreen extends ConsumerWidget {
             SnackBar(content: Text(S.displayNameUpdated)),
           );
         }
-      } catch (e) {
+      } on NameConflictException catch (e) {
         if (context.mounted) {
-          final msg = e.toString();
-          final snackText = msg.contains('nameConflict:')
-              ? S.nameConflictInHousehold(
-                  msg.split('nameConflict:').last.replaceAll(')', ''))
-              : S.errorUpdatingDisplayName;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(snackText),
+              content: Text(S.nameConflictInHousehold(e.householdName)),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(S.errorUpdatingDisplayName),
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
@@ -180,11 +186,4 @@ class ProfileScreen extends ConsumerWidget {
     }
   }
 
-  String _getInitials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return name.substring(0, name.length >= 2 ? 2 : 1).toUpperCase();
-  }
 }

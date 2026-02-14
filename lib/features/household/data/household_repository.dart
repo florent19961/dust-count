@@ -35,15 +35,13 @@ class HouseholdRepository {
       // Use provided tasks or generate from defaults
       final List<PredefinedTask> tasks = predefinedTasks ??
           AppConstants.predefinedTasks
-              .map((taskData) => PredefinedTask(
+              .map((t) => PredefinedTask(
                     id: _uuid.v4(),
-                    nameFr: taskData['nameFr'] as String,
-                    nameEn: taskData['nameEn'] as String,
-                    categoryId: taskData['category'] as String,
-                    defaultDurationMinutes:
-                        taskData['durationMinutes'] as int,
-                    defaultDifficulty:
-                        taskData['difficulty'] as TaskDifficulty,
+                    nameFr: t.nameFr,
+                    nameEn: t.nameEn,
+                    categoryId: t.category,
+                    defaultDurationMinutes: t.durationMinutes,
+                    defaultDifficulty: t.difficulty,
                   ))
               .toList();
 

@@ -1,11 +1,9 @@
-import 'dart:async';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dust_count/shared/models/task_log.dart';
 import 'package:dust_count/shared/models/filter_period.dart';
 import 'package:dust_count/core/constants/app_constants.dart';
 import 'package:dust_count/core/extensions/date_extensions.dart';
+import 'package:dust_count/core/utils/firestore_retry.dart';
 import 'package:dust_count/features/tasks/data/task_repository.dart';
 import 'package:dust_count/features/auth/domain/auth_providers.dart';
 import 'package:dust_count/features/household/domain/household_providers.dart';
@@ -97,48 +95,17 @@ final filteredTaskLogsProvider = StreamProvider<List<TaskLog>>((ref) {
   final filter = ref.watch(taskFilterProvider);
   final taskRepository = ref.watch(taskRepositoryProvider);
 
-  Stream<List<TaskLog>> watchWithRetry() {
-    int retries = 0;
-    late StreamController<List<TaskLog>> controller;
-    StreamSubscription<List<TaskLog>>? subscription;
-
-    void listen() {
-      subscription = taskRepository
-          .watchTaskLogs(
-            householdId,
-            startDate: filter.startDate,
-            endDate: filter.endDate,
-            categoryId: filter.categoryId,
-            performedBy: filter.performedBy,
-            taskNameFr: filter.taskNameFr,
-            difficulty: filter.difficulty,
-          )
-          .listen(
-            controller.add,
-            onError: (Object error) {
-              if (error is FirebaseException &&
-                  error.code == 'permission-denied' &&
-                  retries < 2) {
-                retries++;
-                subscription?.cancel();
-                Future.delayed(const Duration(seconds: 1), listen);
-              } else {
-                controller.addError(error);
-              }
-            },
-            onDone: controller.close,
-          );
-    }
-
-    controller = StreamController<List<TaskLog>>(
-      onListen: listen,
-      onCancel: () => subscription?.cancel(),
-    );
-
-    return controller.stream;
-  }
-
-  return watchWithRetry();
+  return retryStreamOnPermissionDenied(
+    () => taskRepository.watchTaskLogs(
+      householdId,
+      startDate: filter.startDate,
+      endDate: filter.endDate,
+      categoryId: filter.categoryId,
+      performedBy: filter.performedBy,
+      taskNameFr: filter.taskNameFr,
+      difficulty: filter.difficulty,
+    ),
+  );
 });
 
 /// Provider for task controller

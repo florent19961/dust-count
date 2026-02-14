@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:dust_count/shared/models/household.dart';
 import 'package:dust_count/features/household/domain/household_providers.dart';
+import 'package:dust_count/shared/utils/string_helpers.dart';
 
 /// Settings screen for managing a household
 class HouseholdSettingsScreen extends ConsumerWidget {
@@ -210,7 +211,7 @@ class HouseholdSettingsScreen extends ConsumerWidget {
 
   Widget _buildMemberItem(BuildContext context, HouseholdMember member) {
     final theme = Theme.of(context);
-    final initials = _getInitials(member.displayName);
+    final initials = getInitials(member.displayName);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -475,16 +476,6 @@ class HouseholdSettingsScreen extends ConsumerWidget {
     }
   }
 
-  String _getInitials(String displayName) {
-    final parts = displayName.trim().split(' ');
-    if (parts.isEmpty) return '?';
-
-    if (parts.length == 1) {
-      return parts[0].substring(0, 1).toUpperCase();
-    }
-
-    return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
-  }
 
   String _getLocalizedTaskName(PredefinedTask task) {
     return task.nameFr;

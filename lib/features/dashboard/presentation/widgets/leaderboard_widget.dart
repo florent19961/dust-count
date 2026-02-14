@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dust_count/shared/strings.dart';
+import 'package:dust_count/shared/models/household.dart';
 import 'package:dust_count/features/dashboard/data/dashboard_repository.dart';
 import 'package:dust_count/features/dashboard/presentation/widgets/member_avatar.dart';
 import 'package:dust_count/core/constants/app_constants.dart';
@@ -8,10 +9,12 @@ import 'package:dust_count/core/constants/app_constants.dart';
 /// Leaderboard widget showing ranked household members
 class LeaderboardWidget extends ConsumerWidget {
   final List<LeaderboardEntry> entries;
+  final List<HouseholdMember> members;
 
   const LeaderboardWidget({
     super.key,
     required this.entries,
+    required this.members,
   });
 
   @override
@@ -50,6 +53,7 @@ class LeaderboardWidget extends ConsumerWidget {
         return _LeaderboardRow(
           rank: rank,
           entry: leaderboardEntry,
+          members: members,
         );
       }).toList(),
     );
@@ -60,10 +64,12 @@ class LeaderboardWidget extends ConsumerWidget {
 class _LeaderboardRow extends StatelessWidget {
   final int rank;
   final LeaderboardEntry entry;
+  final List<HouseholdMember> members;
 
   const _LeaderboardRow({
     required this.rank,
     required this.entry,
+    required this.members,
   });
 
   @override
@@ -100,7 +106,10 @@ class _LeaderboardRow extends StatelessWidget {
             // Member avatar
             MemberAvatar(
               displayName: entry.displayName,
-              userId: entry.userId,
+              colorIndex: members
+                  .where((m) => m.userId == entry.userId)
+                  .firstOrNull
+                  ?.colorIndex ?? 0,
               size: 48,
             ),
             const SizedBox(width: 16),

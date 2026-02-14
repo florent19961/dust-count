@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dust_count/shared/strings.dart';
 import 'package:dust_count/shared/models/filter_period.dart';
 import 'package:dust_count/shared/models/household.dart';
+import 'package:dust_count/shared/models/household_category.dart';
+import 'package:dust_count/shared/widgets/filter_panel.dart';
 import 'package:dust_count/features/tasks/domain/task_providers.dart';
 import 'package:dust_count/core/extensions/date_extensions.dart';
-import 'package:dust_count/shared/widgets/category_chip.dart';
-import 'package:dust_count/shared/utils/category_helpers.dart';
-import 'package:dust_count/shared/models/household_category.dart';
-import 'package:dust_count/app/theme/app_colors.dart';
-import 'package:dust_count/core/constants/app_constants.dart';
 
-/// Widget for filtering tasks by period, category, member, and task name
-class PeriodFilter extends ConsumerStatefulWidget {
+/// Widget for filtering tasks by period, category, member, and task name.
+///
+/// Wraps [FilterPanel] and wires it to [taskFilterProvider].
+class PeriodFilter extends ConsumerWidget {
   final List<HouseholdMember> members;
   final List<HouseholdCategory> customCategories;
   final List<PredefinedTask> predefinedTasks;
@@ -27,14 +25,71 @@ class PeriodFilter extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<PeriodFilter> createState() => _PeriodFilterState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final filter = ref.watch(taskFilterProvider);
 
-class _PeriodFilterState extends ConsumerState<PeriodFilter> {
-  bool _showAdvancedFilters = false;
+    return FilterPanel(
+      period: filter.period,
+      startDate: filter.startDate,
+      endDate: filter.endDate,
+      categoryId: filter.categoryId,
+      difficulty: filter.difficulty,
+      taskNameFr: filter.taskNameFr,
+      performedBy: filter.performedBy,
+      customCategories: customCategories,
+      predefinedTasks: predefinedTasks,
+      members: members,
+      showMemberFilter: true,
+      showTaskFilter: showTaskFilter,
+      onPeriodChanged: (period) => _setPeriod(ref, period, context),
+      onCustomDatePicker: () => _showCustomDatePicker(ref, context),
+      onCategoryChanged: (categoryId) {
+        final current = ref.read(taskFilterProvider);
+        ref.read(taskFilterProvider.notifier).state = current.copyWith(
+          categoryId: categoryId,
+          clearCategory: categoryId == null,
+          clearTaskNameFr: true,
+        );
+      },
+      onDifficultyChanged: (difficulty) {
+        final current = ref.read(taskFilterProvider);
+        ref.read(taskFilterProvider.notifier).state = current.copyWith(
+          difficulty: difficulty,
+          clearDifficulty: difficulty == null,
+        );
+      },
+      onTaskNameChanged: (taskNameFr) {
+        final current = ref.read(taskFilterProvider);
+        ref.read(taskFilterProvider.notifier).state = current.copyWith(
+          taskNameFr: taskNameFr,
+          clearTaskNameFr: taskNameFr == null,
+        );
+      },
+      onMemberChanged: (userId) {
+        final current = ref.read(taskFilterProvider);
+        ref.read(taskFilterProvider.notifier).state = current.copyWith(
+          performedBy: userId,
+          clearPerformedBy: userId == null,
+        );
+      },
+      onResetAdvanced: () {
+        final current = ref.read(taskFilterProvider);
+        ref.read(taskFilterProvider.notifier).state = current.copyWith(
+          clearTaskNameFr: true,
+          clearDifficulty: true,
+        );
+      },
+      onAutoClearCategory: () {
+        final current = ref.read(taskFilterProvider);
+        ref.read(taskFilterProvider.notifier).state = current.copyWith(
+          clearCategory: true,
+          clearTaskNameFr: true,
+        );
+      },
+    );
+  }
 
-  /// Show date range picker for custom period
-  Future<void> _showCustomDatePicker() async {
+  Future<void> _showCustomDatePicker(WidgetRef ref, BuildContext context) async {
     final now = DateTime.now();
     final dateRange = await showDateRangePicker(
       context: context,
@@ -57,8 +112,7 @@ class _PeriodFilterState extends ConsumerState<PeriodFilter> {
     }
   }
 
-  /// Update filter for predefined period
-  void _setPeriod(FilterPeriod period) {
+  void _setPeriod(WidgetRef ref, FilterPeriod period, BuildContext context) {
     final now = DateTime.now();
     DateTime? startDate;
     DateTime? endDate;
@@ -73,7 +127,7 @@ class _PeriodFilterState extends ConsumerState<PeriodFilter> {
         endDate = now.endOfMonth;
         break;
       case FilterPeriod.custom:
-        _showCustomDatePicker();
+        _showCustomDatePicker(ref, context);
         return;
     }
 
@@ -84,334 +138,5 @@ class _PeriodFilterState extends ConsumerState<PeriodFilter> {
           endDate: endDate,
           period: period,
         );
-  }
-
-  /// Toggle category filter
-  void _toggleCategory(String categoryId) {
-    final currentFilter = ref.read(taskFilterProvider);
-    final newCategoryId =
-        currentFilter.categoryId == categoryId ? null : categoryId;
-
-    ref.read(taskFilterProvider.notifier).state = currentFilter.copyWith(
-      categoryId: newCategoryId,
-      clearCategory: newCategoryId == null,
-      clearTaskNameFr: true,
-    );
-  }
-
-  /// Toggle member filter
-  void _toggleMember(String userId) {
-    final currentFilter = ref.read(taskFilterProvider);
-    final newPerformedBy =
-        currentFilter.performedBy == userId ? null : userId;
-
-    ref.read(taskFilterProvider.notifier).state = currentFilter.copyWith(
-      performedBy: newPerformedBy,
-      clearPerformedBy: newPerformedBy == null,
-    );
-  }
-
-  /// Toggle difficulty filter
-  void _toggleDifficulty(TaskDifficulty difficulty) {
-    final currentFilter = ref.read(taskFilterProvider);
-    final newDifficulty =
-        currentFilter.difficulty == difficulty ? null : difficulty;
-
-    ref.read(taskFilterProvider.notifier).state = currentFilter.copyWith(
-      difficulty: newDifficulty,
-      clearDifficulty: newDifficulty == null,
-    );
-  }
-
-  /// Toggle task name filter
-  void _toggleTaskName(String taskNameFr) {
-    final currentFilter = ref.read(taskFilterProvider);
-    final newTaskNameFr =
-        currentFilter.taskNameFr == taskNameFr ? null : taskNameFr;
-
-    ref.read(taskFilterProvider.notifier).state = currentFilter.copyWith(
-      taskNameFr: newTaskNameFr,
-      clearTaskNameFr: newTaskNameFr == null,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final filter = ref.watch(taskFilterProvider);
-    final theme = Theme.of(context);
-    final hasActiveAdvancedFilter = filter.taskNameFr != null;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        border: Border(
-          bottom: BorderSide(
-            color: theme.colorScheme.outlineVariant,
-            width: 1,
-          ),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-          // Period chips
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              ChoiceChip(
-                label: Text(S.filterThisWeek),
-                selected: filter.period == FilterPeriod.thisWeek,
-                onSelected: (_) => _setPeriod(FilterPeriod.thisWeek),
-                selectedColor: theme.colorScheme.primaryContainer,
-              ),
-              ChoiceChip(
-                label: Text(S.filterThisMonth),
-                selected: filter.period == FilterPeriod.thisMonth,
-                onSelected: (_) => _setPeriod(FilterPeriod.thisMonth),
-                selectedColor: theme.colorScheme.primaryContainer,
-              ),
-              ChoiceChip(
-                label: filter.period == FilterPeriod.custom &&
-                        filter.startDate != null &&
-                        filter.endDate != null
-                    ? Text(
-                        '${S.formatDateShort(filter.startDate!)} - ${S.formatDateShort(filter.endDate!)}',
-                        overflow: TextOverflow.ellipsis,
-                      )
-                    : Text(S.filterCustom),
-                selected: filter.period == FilterPeriod.custom,
-                onSelected: (_) => _showCustomDatePicker(),
-                selectedColor: theme.colorScheme.primaryContainer,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Category filter
-          Text(
-            S.filterByCategory,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Builder(
-            builder: (context) {
-              final categories = getFilterCategories(
-                widget.customCategories,
-                widget.predefinedTasks,
-              );
-              // Auto-clear obsolete category filter
-              if (filter.categoryId != null &&
-                  !categories.any((c) => c.id == filter.categoryId)) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  ref.read(taskFilterProvider.notifier).state =
-                      filter.copyWith(clearCategory: true, clearTaskNameFr: true);
-                });
-              }
-              return Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: categories.map((category) {
-                  return CategoryChip(
-                    category: category,
-                    selected: filter.categoryId == category.id,
-                    onTap: () => _toggleCategory(category.id),
-                  );
-                }).toList(),
-              );
-            },
-          ),
-          // Difficulty filter
-          const SizedBox(height: 12),
-          Text(
-            S.filterByDifficulty,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              ChoiceChip(
-                label: Text('😊', style: TextStyle(fontSize: 20)),
-                selected: filter.difficulty == TaskDifficulty.plaisir,
-                selectedColor: AppColors.difficultyPlaisir.withOpacity(0.3),
-                onSelected: (_) => _toggleDifficulty(TaskDifficulty.plaisir),
-              ),
-              ChoiceChip(
-                label: Text('😐', style: TextStyle(fontSize: 20)),
-                selected: filter.difficulty == TaskDifficulty.reloo,
-                selectedColor: AppColors.difficultyRelou.withOpacity(0.3),
-                onSelected: (_) => _toggleDifficulty(TaskDifficulty.reloo),
-              ),
-              ChoiceChip(
-                label: Text('😩', style: TextStyle(fontSize: 20)),
-                selected: filter.difficulty == TaskDifficulty.infernal,
-                selectedColor: AppColors.difficultyInfernal.withOpacity(0.3),
-                onSelected: (_) => _toggleDifficulty(TaskDifficulty.infernal),
-              ),
-            ],
-          ),
-          if (widget.members.length > 1) ...[
-            const SizedBox(height: 12),
-            Text(
-              S.filterByMember,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: widget.members.map((member) {
-                final isSelected = filter.performedBy == member.userId;
-                final memberColor =
-                    AppColors.getMemberColor(member.colorIndex);
-                return ChoiceChip(
-                  label: Text(member.displayName),
-                  selected: isSelected,
-                  selectedColor: memberColor.withOpacity(0.3),
-                  onSelected: (_) => _toggleMember(member.userId),
-                  avatar: CircleAvatar(
-                    backgroundColor: memberColor,
-                    radius: 10,
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
-          if (widget.showTaskFilter && widget.predefinedTasks.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            // Advanced filters toggle
-            InkWell(
-              onTap: () {
-                setState(() {
-                  _showAdvancedFilters = !_showAdvancedFilters;
-                });
-              },
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.tune,
-                      size: 20,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      S.advancedFilters,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    if (hasActiveAdvancedFilter) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ],
-                    const Spacer(),
-                    if (hasActiveAdvancedFilter)
-                      TextButton.icon(
-                        onPressed: () {
-                          ref.read(taskFilterProvider.notifier).state =
-                              filter.copyWith(clearTaskNameFr: true, clearDifficulty: true);
-                        },
-                        icon: const Icon(Icons.clear, size: 18),
-                        label: Text(S.resetFilters),
-                      ),
-                    AnimatedRotation(
-                      turns: _showAdvancedFilters ? 0.5 : 0.0,
-                      duration: const Duration(milliseconds: 200),
-                      child: const Icon(Icons.expand_more),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Collapsible task filter content
-            AnimatedCrossFade(
-              firstChild: const SizedBox.shrink(),
-              secondChild: _buildTaskFilterContent(filter),
-              crossFadeState: _showAdvancedFilters
-                  ? CrossFadeState.showSecond
-                  : CrossFadeState.showFirst,
-              duration: const Duration(milliseconds: 200),
-            ),
-          ],
-        ],
-      ),
-      ),
-    );
-  }
-
-  /// Build the task filter chips
-  Widget _buildTaskFilterContent(TaskFilter filter) {
-    final theme = Theme.of(context);
-
-    final availableTasks = filter.categoryId != null
-        ? widget.predefinedTasks
-            .where((t) => t.categoryId == filter.categoryId)
-            .toList()
-        : widget.predefinedTasks
-            .where((t) => t.categoryId != 'archivees')
-            .toList();
-
-    if (availableTasks.isEmpty) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            S.filterByTask,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: availableTasks.map((task) {
-              final isSelected = filter.taskNameFr == task.nameFr;
-              return ChoiceChip(
-                label: Text(
-                  task.nameFr.length > 30
-                      ? '${task.nameFr.substring(0, 27)}...'
-                      : task.nameFr,
-                ),
-                selected: isSelected,
-                onSelected: (_) => _toggleTaskName(task.nameFr),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
   }
 }

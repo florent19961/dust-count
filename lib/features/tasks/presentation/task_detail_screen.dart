@@ -8,7 +8,8 @@ import 'package:dust_count/shared/widgets/difficulty_badge.dart';
 import 'package:dust_count/shared/widgets/category_chip.dart';
 import 'package:dust_count/shared/utils/category_helpers.dart';
 import 'package:dust_count/features/tasks/domain/task_providers.dart';
-import 'package:dust_count/app/theme/app_colors.dart';
+import 'package:dust_count/shared/utils/string_helpers.dart';
+import 'package:dust_count/shared/utils/member_helpers.dart' as member_helpers;
 
 /// Screen displaying full details of a single task log
 class TaskDetailScreen extends ConsumerStatefulWidget {
@@ -37,23 +38,9 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
     _taskLog = widget.taskLog;
   }
 
-  /// Get initials from performer name
-  String get _initials {
-    final parts = _taskLog.performedByName.split(' ');
-    if (parts.isEmpty) return '?';
-    if (parts.length == 1) {
-      return parts[0].substring(0, 1).toUpperCase();
-    }
-    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-  }
-
   /// Get color for member based on stable colorIndex
   Color _getMemberColor() {
-    final member = widget.household.members
-        .where((m) => m.userId == _taskLog.performedBy)
-        .firstOrNull;
-
-    return AppColors.getMemberColor(member?.colorIndex ?? 0);
+    return member_helpers.getMemberColor(widget.household, _taskLog.performedBy);
   }
 
   /// Show delete confirmation dialog
@@ -72,7 +59,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
             FilledButton(
               onPressed: () => context.pop(true),
               style: FilledButton.styleFrom(
-                backgroundColor: Colors.red,
+                backgroundColor: Theme.of(context).colorScheme.error,
               ),
               child: Text(S.delete),
             ),
@@ -92,7 +79,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(S.taskDeletedSuccess),
-                backgroundColor: Colors.green,
+                backgroundColor: Theme.of(context).colorScheme.primary,
               ),
             );
             context.pop();
@@ -104,7 +91,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(S.taskDeletedError(error.toString())),
-                backgroundColor: Colors.red,
+                backgroundColor: Theme.of(context).colorScheme.error,
               ),
             );
           }
@@ -171,7 +158,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                     radius: 24,
                     backgroundColor: _getMemberColor(),
                     child: Text(
-                      _initials,
+                      getInitials(_taskLog.performedByName),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onPrimary,
                         fontWeight: FontWeight.bold,

@@ -3,6 +3,20 @@ import 'package:dust_count/shared/models/household.dart';
 import 'package:dust_count/shared/models/household_category.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:dust_count/app/theme/app_colors.dart';
+import 'package:dust_count/core/constants/app_constants.dart';
+
+/// Migrate legacy category names to current values.
+///
+/// Old categories 'exterieur' and 'administratif' are mapped to 'divers'.
+String migrateCategory(String categoryName) {
+  switch (categoryName) {
+    case 'exterieur':
+    case 'administratif':
+      return 'divers';
+    default:
+      return categoryName;
+  }
+}
 
 /// Built-in categories available in every household.
 const List<HouseholdCategory> builtInCategories = [
@@ -50,7 +64,7 @@ const List<HouseholdCategory> builtInCategories = [
 
 /// Special category for archived/deleted tasks.
 const HouseholdCategory archiveesCategory = HouseholdCategory(
-  id: 'archivees',
+  id: AppConstants.archivedCategoryId,
   labelFr: 'Archivées',
   iconCodePoint: 0xe149, // Icons.archive
   colorValue: 0xFF938F99,
@@ -84,7 +98,7 @@ List<HouseholdCategory> getFilterCategories(
       result.add(cat);
     }
   }
-  if (usedCategoryIds.contains('archivees')) {
+  if (usedCategoryIds.contains(AppConstants.archivedCategoryId)) {
     result.add(archiveesCategory);
   }
   return result;
@@ -95,7 +109,7 @@ HouseholdCategory? findCategory(
   String id,
   List<HouseholdCategory> custom,
 ) {
-  if (id == 'archivees') return archiveesCategory;
+  if (id == AppConstants.archivedCategoryId) return archiveesCategory;
   for (final cat in builtInCategories) {
     if (cat.id == id) return cat;
   }
@@ -126,7 +140,7 @@ String getCategoryLabel(String id, List<HouseholdCategory> custom) {
       return S.categoryCourses;
     case 'divers':
       return S.categoryDivers;
-    case 'archivees':
+    case AppConstants.archivedCategoryId:
       return S.categoryArchivees;
     default:
       return findCategory(id, custom)?.labelFr ?? id;

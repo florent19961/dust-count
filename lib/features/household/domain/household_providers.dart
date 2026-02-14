@@ -129,7 +129,7 @@ final quickTasksProvider = Provider.family<List<PredefinedTask>, String>((ref, h
   // Fallback: first 8 tasks matching AppConstants order
   final quickNames = AppConstants.predefinedTasks
       .take(AppConstants.quickTaskCount)
-      .map((t) => t['nameFr'] as String)
+      .map((t) => t.nameFr)
       .toSet();
   return household.predefinedTasks
       .where((t) => quickNames.contains(t.nameFr))

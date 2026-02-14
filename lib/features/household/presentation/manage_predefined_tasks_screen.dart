@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:dust_count/shared/models/household.dart';
 import 'package:dust_count/shared/models/household_category.dart';
@@ -8,7 +7,8 @@ import 'package:dust_count/shared/utils/category_helpers.dart';
 import 'package:dust_count/core/constants/app_constants.dart';
 import 'package:dust_count/shared/widgets/difficulty_badge.dart';
 import 'package:dust_count/features/household/domain/household_providers.dart';
-import 'package:dust_count/features/household/presentation/widgets/task_form_sheet.dart';
+import 'package:dust_count/features/household/presentation/widgets/add_predefined_task_sheet.dart';
+import 'package:dust_count/features/household/presentation/widgets/edit_predefined_task_sheet.dart';
 import 'package:dust_count/features/household/presentation/widgets/add_category_sheet.dart';
 import 'package:dust_count/features/tasks/data/task_repository.dart';
 
@@ -28,7 +28,6 @@ class ManagePredefinedTasksScreen extends ConsumerStatefulWidget {
 
 class _ManagePredefinedTasksScreenState
     extends ConsumerState<ManagePredefinedTasksScreen> {
-  static const int _maxQuickTasks = 12;
   List<String> _quickTaskIds = [];
   bool _initialized = false;
   bool _dirty = false;
@@ -100,7 +99,7 @@ class _ManagePredefinedTasksScreenState
               } else {
                 final quickNames = AppConstants.predefinedTasks
                     .take(AppConstants.quickTaskCount)
-                    .map((t) => t['nameFr'] as String)
+                    .map((t) => t.nameFr)
                     .toSet();
                 _quickTaskIds = household.predefinedTasks
                     .where((t) => quickNames.contains(t.nameFr))
@@ -127,8 +126,8 @@ class _ManagePredefinedTasksScreenState
             }
             final categories = grouped.keys.toList()
               ..sort((a, b) {
-                if (a == 'archivees') return 1;
-                if (b == 'archivees') return -1;
+                if (a == AppConstants.archivedCategoryId) return 1;
+                if (b == AppConstants.archivedCategoryId) return -1;
                 // Built-in categories first, then custom
                 final aBuiltIn = builtInCategories.any((c) => c.id == a);
                 final bBuiltIn = builtInCategories.any((c) => c.id == b);
@@ -149,7 +148,7 @@ class _ManagePredefinedTasksScreenState
               child: Column(
                 children: categories.map((categoryId) {
                   final categoryTasks = grouped[categoryId]!;
-                  final isArchived = categoryId == 'archivees';
+                  final isArchived = categoryId == AppConstants.archivedCategoryId;
                   return _buildCategorySection(
                     context,
                     household,
@@ -295,7 +294,7 @@ class _ManagePredefinedTasksScreenState
     final theme = Theme.of(context);
     final color = getCategoryColor(categoryId, customCategories);
     final isCustom = !builtInCategories.any((c) => c.id == categoryId) &&
-        categoryId != 'archivees';
+        categoryId != AppConstants.archivedCategoryId;
     final isEmpty = tasks.isEmpty;
     final emoji = getCategoryEmoji(categoryId, customCategories);
     final label = getCategoryLabel(categoryId, customCategories);
@@ -556,7 +555,7 @@ class _ManagePredefinedTasksScreenState
         _quickTaskIds.remove(taskId);
         _dirty = true;
       } else {
-        if (_quickTaskIds.length >= _maxQuickTasks) {
+        if (_quickTaskIds.length >= AppConstants.maxQuickTasks) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(S.maxQuickTasksReached)),
           );
@@ -585,9 +584,8 @@ class _ManagePredefinedTasksScreenState
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => _AddPredefinedTaskSheet(
+      builder: (context) => AddPredefinedTaskSheet(
         householdId: widget.householdId,
-        ref: ref,
         initialCategoryId: initialCategoryId,
         categoryLocked: lockCategory,
       ),
@@ -602,11 +600,10 @@ class _ManagePredefinedTasksScreenState
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => _EditPredefinedTaskSheet(
+      builder: (context) => EditPredefinedTaskSheet(
         householdId: widget.householdId,
         household: household,
         task: task,
-        ref: ref,
       ),
     );
   }
@@ -625,275 +622,18 @@ class _ManagePredefinedTasksScreenState
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => _FirestoreAddCategorySheet(
-        householdId: widget.householdId,
-        ref: ref,
+      builder: (sheetContext) => AddCategorySheet(
+        onCategoryCreated: (category) async {
+          await ref
+              .read(householdControllerProvider.notifier)
+              .addCustomCategory(widget.householdId, category);
+          if (sheetContext.mounted) {
+            ScaffoldMessenger.of(sheetContext).showSnackBar(
+              SnackBar(content: Text(S.categoryAdded)),
+            );
+          }
+        },
       ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Add sheet
-// ---------------------------------------------------------------------------
-
-class _AddPredefinedTaskSheet extends StatefulWidget {
-  final String householdId;
-  final WidgetRef ref;
-  final String? initialCategoryId;
-  final bool categoryLocked;
-
-  const _AddPredefinedTaskSheet({
-    required this.householdId,
-    required this.ref,
-    this.initialCategoryId,
-    this.categoryLocked = false,
-  });
-
-  @override
-  State<_AddPredefinedTaskSheet> createState() =>
-      _AddPredefinedTaskSheetState();
-}
-
-class _AddPredefinedTaskSheetState extends State<_AddPredefinedTaskSheet> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  late String _categoryId = widget.initialCategoryId ?? 'menage';
-  int _durationMinutes = 15;
-  TaskDifficulty _difficulty = TaskDifficulty.reloo;
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final name = _nameController.text.trim();
-
-    final task = PredefinedTask(
-      id: const Uuid().v4(),
-      nameFr: name,
-      nameEn: name,
-      categoryId: _categoryId,
-      defaultDurationMinutes: _durationMinutes,
-      defaultDifficulty: _difficulty,
-    );
-
-    await widget.ref
-        .read(householdControllerProvider.notifier)
-        .addPredefinedTask(widget.householdId, task);
-
-    if (mounted) {
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.taskAddedToPredefined)),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final householdAsync = widget.ref.watch(currentHouseholdProvider);
-    final customCategories =
-        householdAsync.value?.customCategories ?? const [];
-
-    return TaskFormSheet(
-      title: S.addPredefinedTask,
-      nameController: _nameController,
-      categoryId: _categoryId,
-      durationMinutes: _durationMinutes,
-      difficulty: _difficulty,
-      formKey: _formKey,
-      customCategories: customCategories,
-      categoryLocked: widget.categoryLocked,
-      onCategoryChanged: (v) => setState(() => _categoryId = v),
-      onDurationChanged: (v) => setState(() => _durationMinutes = v),
-      onDifficultyChanged: (v) => setState(() => _difficulty = v),
-      submitLabel: S.addPredefinedTask,
-      onSubmit: _submit,
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Edit sheet
-// ---------------------------------------------------------------------------
-
-class _EditPredefinedTaskSheet extends StatefulWidget {
-  final String householdId;
-  final Household household;
-  final PredefinedTask task;
-  final WidgetRef ref;
-
-  const _EditPredefinedTaskSheet({
-    required this.householdId,
-    required this.household,
-    required this.task,
-    required this.ref,
-  });
-
-  @override
-  State<_EditPredefinedTaskSheet> createState() =>
-      _EditPredefinedTaskSheetState();
-}
-
-class _EditPredefinedTaskSheetState extends State<_EditPredefinedTaskSheet> {
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _nameController;
-  late String _categoryId;
-  late int _durationMinutes;
-  late TaskDifficulty _difficulty;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: widget.task.nameFr);
-    _categoryId = widget.task.categoryId;
-    _durationMinutes = widget.task.defaultDurationMinutes;
-    _difficulty = widget.task.defaultDifficulty;
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final name = _nameController.text.trim();
-
-    final updatedTask = PredefinedTask(
-      id: widget.task.id,
-      nameFr: name,
-      nameEn: name,
-      categoryId: _categoryId,
-      defaultDurationMinutes: _durationMinutes,
-      defaultDifficulty: _difficulty,
-    );
-
-    await widget.ref
-        .read(householdControllerProvider.notifier)
-        .editPredefinedTask(widget.householdId, widget.task, updatedTask);
-
-    if (mounted) {
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.taskUpdatedInPredefined)),
-      );
-    }
-  }
-
-  Future<void> _delete() async {
-    final taskRepo = widget.ref.read(taskRepositoryProvider);
-    final count = await taskRepo.countTaskLogsByName(
-      widget.householdId,
-      widget.task.nameFr,
-    );
-
-    if (!mounted) return;
-
-    final message = count > 0
-        ? S.deleteTaskWarningMessage(widget.task.nameFr, count)
-        : S.deleteTaskNoLogsMessage(widget.task.nameFr);
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(S.deleteTaskWarningTitle),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(S.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            child: Text(S.delete),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && mounted) {
-      await widget.ref
-          .read(householdControllerProvider.notifier)
-          .deletePredefinedTask(widget.householdId, widget.task);
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(S.taskRemovedFromPredefined)),
-        );
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return TaskFormSheet(
-      title: S.editPredefinedTask,
-      nameController: _nameController,
-      categoryId: _categoryId,
-      durationMinutes: _durationMinutes,
-      difficulty: _difficulty,
-      formKey: _formKey,
-      customCategories: widget.household.customCategories,
-      onCategoryChanged: (v) => setState(() => _categoryId = v),
-      onDurationChanged: (v) => setState(() => _durationMinutes = v),
-      onDifficultyChanged: (v) => setState(() => _difficulty = v),
-      submitLabel: S.save,
-      onSubmit: _submit,
-      trailing: Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: TextButton.icon(
-          onPressed: _delete,
-          icon: const Icon(Icons.delete_outline),
-          label: Text(S.delete),
-          style: TextButton.styleFrom(
-            foregroundColor: colorScheme.error,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Firestore-backed add category sheet (delegates to shared AddCategorySheet)
-// ---------------------------------------------------------------------------
-
-class _FirestoreAddCategorySheet extends StatelessWidget {
-  final String householdId;
-  final WidgetRef ref;
-
-  const _FirestoreAddCategorySheet({
-    required this.householdId,
-    required this.ref,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AddCategorySheet(
-      onCategoryCreated: (category) async {
-        await ref
-            .read(householdControllerProvider.notifier)
-            .addCustomCategory(householdId, category);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.categoryAdded)),
-          );
-        }
-      },
     );
   }
 }

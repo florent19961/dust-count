@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dust_count/core/constants/app_constants.dart';
 import 'package:dust_count/shared/models/household_category.dart';
-import '../../core/constants/app_constants.dart';
+import 'package:dust_count/shared/utils/category_helpers.dart';
 
 /// Household member information
 class HouseholdMember {
@@ -77,17 +78,6 @@ class PredefinedTask {
     required this.defaultDifficulty,
   });
 
-  /// Migrate legacy category names to current values
-  static String _migrateCategory(String categoryName) {
-    switch (categoryName) {
-      case 'exterieur':
-      case 'administratif':
-        return 'divers';
-      default:
-        return categoryName;
-    }
-  }
-
   /// Create PredefinedTask from map
   factory PredefinedTask.fromMap(Map<String, dynamic> map) {
     final nameFr = map['nameFr'] as String;
@@ -95,7 +85,7 @@ class PredefinedTask {
       id: map['id'] as String,
       nameFr: nameFr,
       nameEn: map['nameEn'] as String,
-      categoryId: _migrateCategory(map['category'] as String),
+      categoryId: migrateCategory(map['category'] as String),
       defaultDurationMinutes: map['defaultDurationMinutes'] as int,
       defaultDifficulty: TaskDifficulty.values.firstWhere(
         (e) => e.name == map['defaultDifficulty'] as String,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dust_count/shared/models/household.dart';
+import 'package:dust_count/shared/utils/string_helpers.dart';
 
 /// Reusable card widget for displaying household information
 class HouseholdCard extends StatelessWidget {
@@ -101,7 +102,7 @@ class HouseholdCard extends StatelessWidget {
   }
 
   Widget _buildAvatar(String displayName, ThemeData theme) {
-    final initials = _getInitials(displayName);
+    final initials = getInitials(displayName);
 
     return Container(
       width: 36,
@@ -150,14 +151,4 @@ class HouseholdCard extends StatelessWidget {
     );
   }
 
-  String _getInitials(String displayName) {
-    final parts = displayName.trim().split(' ');
-    if (parts.isEmpty) return '?';
-
-    if (parts.length == 1) {
-      return parts[0].substring(0, 1).toUpperCase();
-    }
-
-    return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
-  }
 }

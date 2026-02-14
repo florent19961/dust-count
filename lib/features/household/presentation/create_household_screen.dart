@@ -24,7 +24,6 @@ class CreateHouseholdScreen extends ConsumerStatefulWidget {
 class _CreateHouseholdScreenState
     extends ConsumerState<CreateHouseholdScreen> {
   static const _uuid = Uuid();
-  static const int _maxQuickTasks = 12;
 
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -49,11 +48,11 @@ class _CreateHouseholdScreenState
     _tasks = AppConstants.predefinedTasks
         .map((t) => PredefinedTask(
               id: _uuid.v4(),
-              nameFr: t['nameFr'] as String,
-              nameEn: t['nameEn'] as String,
-              categoryId: t['category'] as String,
-              defaultDurationMinutes: t['durationMinutes'] as int,
-              defaultDifficulty: t['difficulty'] as TaskDifficulty,
+              nameFr: t.nameFr,
+              nameEn: t.nameEn,
+              categoryId: t.category,
+              defaultDurationMinutes: t.durationMinutes,
+              defaultDifficulty: t.difficulty,
             ))
         .toList();
     _quickTaskIds = _tasks
@@ -677,7 +676,7 @@ class _CreateHouseholdScreenState
       if (_quickTaskIds.contains(taskId)) {
         _quickTaskIds.remove(taskId);
       } else {
-        if (_quickTaskIds.length >= _maxQuickTasks) {
+        if (_quickTaskIds.length >= AppConstants.maxQuickTasks) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(S.maxQuickTasksReached)),
           );

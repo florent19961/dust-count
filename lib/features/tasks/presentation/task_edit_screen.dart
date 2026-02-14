@@ -179,7 +179,7 @@ class _TaskEditScreenState extends ConsumerState<TaskEditScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(S.taskUpdatedSuccess),
-              backgroundColor: Colors.green,
+              backgroundColor: Theme.of(context).colorScheme.primary,
             ),
           );
           context.pop(updatedLog);
@@ -191,7 +191,7 @@ class _TaskEditScreenState extends ConsumerState<TaskEditScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(S.taskUpdatedError(error.toString())),
-              backgroundColor: Colors.red,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
         }

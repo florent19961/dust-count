@@ -38,20 +38,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final pages = [
       _OnboardingPage(
         icon: Icons.cleaning_services_rounded,
-        title: S.onboardingTitle1,
-        description: S.onboardingDescription1,
+        title: S.onboardingWelcomeTitle,
+        description: S.onboardingWelcomeDescription,
         color: primaryColor,
       ),
       _OnboardingPage(
         icon: Icons.people_outline,
-        title: S.onboardingTitle2,
-        description: S.onboardingDescription2,
+        title: S.onboardingConceptTitle,
+        description: S.onboardingConceptDescription,
         color: primaryColor,
       ),
       _OnboardingPage(
         icon: Icons.dashboard_outlined,
-        title: S.onboardingTitle3,
-        description: S.onboardingDescription3,
+        title: S.onboardingGetStartedTitle,
+        description: S.onboardingGetStartedDescription,
         color: primaryColor,
       ),
     ];

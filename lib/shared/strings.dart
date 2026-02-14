@@ -52,15 +52,6 @@ abstract final class S {
       'Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.';
   static const resetEmailDescription =
       'Si un compte existe avec cet email, vous recevrez bientôt un lien de réinitialisation.';
-  static const onboardingTitle1 = 'Bienvenue sur DustCount';
-  static const onboardingDescription1 =
-      'Suivez les tâches ménagères ensemble, équitablement et en toute transparence';
-  static const onboardingTitle2 = 'Comme Tricount, mais pour les tâches';
-  static const onboardingDescription2 =
-      'Chaque membre enregistre ses tâches. Voyez qui fait quoi, suivez le temps passé et gardez l\'équilibre.';
-  static const onboardingTitle3 = 'Commencer';
-  static const onboardingDescription3 =
-      'Créez ou rejoignez un foyer et commencez à suivre les tâches avec votre famille ou vos colocataires';
   static const createAccount = 'Créer un compte';
   static const registrationDescription =
       'Créez un nouveau compte pour commencer';

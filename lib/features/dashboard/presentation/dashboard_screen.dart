@@ -3,11 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:dust_count/shared/models/household.dart';
 import 'package:dust_count/shared/models/filter_period.dart';
-import 'package:dust_count/shared/widgets/category_chip.dart';
-import 'package:dust_count/shared/utils/category_helpers.dart';
+import 'package:dust_count/shared/widgets/filter_panel.dart';
 import 'package:dust_count/core/extensions/date_extensions.dart';
-import 'package:dust_count/core/constants/app_constants.dart';
-import 'package:dust_count/app/theme/app_colors.dart';
 import 'package:dust_count/features/dashboard/domain/dashboard_providers.dart';
 import 'package:dust_count/features/dashboard/presentation/widgets/time_distribution_chart.dart';
 import 'package:dust_count/features/dashboard/presentation/widgets/category_breakdown_chart.dart';
@@ -33,8 +30,6 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  bool _showAdvancedFilters = false;
-
   @override
   Widget build(BuildContext context) {
     Widget buildScrollView() {
@@ -105,7 +100,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               title: S.leaderboard,
               icon: Icons.leaderboard,
               child: ref.watch(leaderboardProvider).when(
-                data: (entries) => LeaderboardWidget(entries: entries),
+                data: (entries) => LeaderboardWidget(
+                  entries: entries,
+                  members: widget.household.members,
+                ),
                 loading: () => _buildLoadingState(),
                 error: (error, stack) => _buildErrorState(
                   error.toString(),
@@ -125,6 +123,63 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
 
     return Scaffold(body: buildScrollView());
+  }
+
+  /// Build the unified filters card using the shared [FilterPanel].
+  Widget _buildFiltersCard() {
+    final filter = ref.watch(dashboardFilterProvider);
+
+    return FilterPanel(
+      period: filter.period,
+      startDate: filter.startDate,
+      endDate: filter.endDate,
+      categoryId: filter.categoryId,
+      difficulty: filter.difficulty,
+      taskNameFr: filter.taskNameFr,
+      customCategories: widget.household.customCategories,
+      predefinedTasks: widget.household.predefinedTasks,
+      showTaskFilter: widget.household.predefinedTasks.isNotEmpty,
+      onPeriodChanged: (period) {
+        if (period == FilterPeriod.custom) {
+          _showCustomDateRangePicker();
+          return;
+        }
+        ref.read(dashboardFilterProvider.notifier).state =
+            filter.copyWith(period: period);
+      },
+      onCustomDatePicker: _showCustomDateRangePicker,
+      onCategoryChanged: (categoryId) {
+        ref.read(dashboardFilterProvider.notifier).state = filter.copyWith(
+          categoryId: categoryId,
+          clearCategory: categoryId == null,
+          clearTaskNameFr: true,
+        );
+      },
+      onDifficultyChanged: (difficulty) {
+        ref.read(dashboardFilterProvider.notifier).state = filter.copyWith(
+          difficulty: difficulty,
+          clearDifficulty: difficulty == null,
+        );
+      },
+      onTaskNameChanged: (taskNameFr) {
+        ref.read(dashboardFilterProvider.notifier).state = filter.copyWith(
+          taskNameFr: taskNameFr,
+          clearTaskNameFr: taskNameFr == null,
+        );
+      },
+      onResetAdvanced: () {
+        ref.read(dashboardFilterProvider.notifier).state = filter.copyWith(
+          clearTaskNameFr: true,
+          clearDifficulty: true,
+        );
+      },
+      onAutoClearCategory: () {
+        ref.read(dashboardFilterProvider.notifier).state = filter.copyWith(
+          clearCategory: true,
+          clearTaskNameFr: true,
+        );
+      },
+    );
   }
 
   /// Show date range picker for custom period
@@ -148,309 +203,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         period: FilterPeriod.custom,
       );
     }
-  }
-
-  /// Update filter for predefined period
-  void _setPeriod(FilterPeriod period) {
-    final filter = ref.read(dashboardFilterProvider);
-    if (period == FilterPeriod.custom) {
-      _showCustomDateRangePicker();
-      return;
-    }
-    ref.read(dashboardFilterProvider.notifier).state =
-        filter.copyWith(period: period);
-  }
-
-  /// Build the unified filters card
-  Widget _buildFiltersCard() {
-    final theme = Theme.of(context);
-    final filter = ref.watch(dashboardFilterProvider);
-    final hasActiveAdvancedFilter = filter.taskNameFr != null;
-
-    final categories = getFilterCategories(
-      widget.household.customCategories,
-      widget.household.predefinedTasks,
-    );
-
-    // Auto-clear obsolete category filter
-    if (filter.categoryId != null &&
-        !categories.any((c) => c.id == filter.categoryId)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(dashboardFilterProvider.notifier).state =
-            filter.copyWith(clearCategory: true, clearTaskNameFr: true);
-      });
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        border: Border(
-          bottom: BorderSide(
-            color: theme.colorScheme.outlineVariant,
-            width: 1,
-          ),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Period chips (same style as Historique)
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              ChoiceChip(
-                label: Text(S.filterThisWeek),
-                selected: filter.period == FilterPeriod.thisWeek,
-                onSelected: (_) => _setPeriod(FilterPeriod.thisWeek),
-                selectedColor: theme.colorScheme.primaryContainer,
-              ),
-              ChoiceChip(
-                label: Text(S.filterThisMonth),
-                selected: filter.period == FilterPeriod.thisMonth,
-                onSelected: (_) => _setPeriod(FilterPeriod.thisMonth),
-                selectedColor: theme.colorScheme.primaryContainer,
-              ),
-              ChoiceChip(
-                label: filter.period == FilterPeriod.custom &&
-                        filter.startDate != null &&
-                        filter.endDate != null
-                    ? Text(
-                        '${S.formatDateShort(filter.startDate!)} - ${S.formatDateShort(filter.endDate!)}',
-                        overflow: TextOverflow.ellipsis,
-                      )
-                    : Text(S.filterCustom),
-                selected: filter.period == FilterPeriod.custom,
-                onSelected: (_) => _showCustomDateRangePicker(),
-                selectedColor: theme.colorScheme.primaryContainer,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Category filter (always visible)
-          Text(
-            S.filterByCategory,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: categories.map((category) {
-              final isSelected = filter.categoryId == category.id;
-              return CategoryChip(
-                category: category,
-                selected: isSelected,
-                onTap: () {
-                  if (isSelected) {
-                    ref.read(dashboardFilterProvider.notifier).state =
-                        filter.copyWith(
-                      clearCategory: true,
-                      clearTaskNameFr: true,
-                    );
-                  } else {
-                    ref.read(dashboardFilterProvider.notifier).state =
-                        filter.copyWith(
-                      categoryId: category.id,
-                      clearTaskNameFr: true,
-                    );
-                  }
-                },
-              );
-            }).toList(),
-          ),
-          // Difficulty filter
-          const SizedBox(height: 12),
-          Text(
-            S.filterByDifficulty,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              ChoiceChip(
-                label: Text('😊', style: TextStyle(fontSize: 20)),
-                selected: filter.difficulty == TaskDifficulty.plaisir,
-                selectedColor: AppColors.difficultyPlaisir.withOpacity(0.3),
-                onSelected: (_) {
-                  if (filter.difficulty == TaskDifficulty.plaisir) {
-                    ref.read(dashboardFilterProvider.notifier).state =
-                        filter.copyWith(clearDifficulty: true);
-                  } else {
-                    ref.read(dashboardFilterProvider.notifier).state =
-                        filter.copyWith(difficulty: TaskDifficulty.plaisir);
-                  }
-                },
-              ),
-              ChoiceChip(
-                label: Text('😐', style: TextStyle(fontSize: 20)),
-                selected: filter.difficulty == TaskDifficulty.reloo,
-                selectedColor: AppColors.difficultyRelou.withOpacity(0.3),
-                onSelected: (_) {
-                  if (filter.difficulty == TaskDifficulty.reloo) {
-                    ref.read(dashboardFilterProvider.notifier).state =
-                        filter.copyWith(clearDifficulty: true);
-                  } else {
-                    ref.read(dashboardFilterProvider.notifier).state =
-                        filter.copyWith(difficulty: TaskDifficulty.reloo);
-                  }
-                },
-              ),
-              ChoiceChip(
-                label: Text('😩', style: TextStyle(fontSize: 20)),
-                selected: filter.difficulty == TaskDifficulty.infernal,
-                selectedColor: AppColors.difficultyInfernal.withOpacity(0.3),
-                onSelected: (_) {
-                  if (filter.difficulty == TaskDifficulty.infernal) {
-                    ref.read(dashboardFilterProvider.notifier).state =
-                        filter.copyWith(clearDifficulty: true);
-                  } else {
-                    ref.read(dashboardFilterProvider.notifier).state =
-                        filter.copyWith(difficulty: TaskDifficulty.infernal);
-                  }
-                },
-              ),
-            ],
-          ),
-          if (widget.household.predefinedTasks.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            // Advanced filters toggle
-            InkWell(
-              onTap: () {
-                setState(() {
-                  _showAdvancedFilters = !_showAdvancedFilters;
-                });
-              },
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.tune,
-                      size: 20,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      S.advancedFilters,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    if (hasActiveAdvancedFilter) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ],
-                    const Spacer(),
-                    if (hasActiveAdvancedFilter)
-                      TextButton.icon(
-                        onPressed: () {
-                          ref.read(dashboardFilterProvider.notifier).state =
-                              filter.copyWith(clearTaskNameFr: true, clearDifficulty: true);
-                        },
-                        icon: const Icon(Icons.clear, size: 18),
-                        label: Text(S.resetFilters),
-                      ),
-                    AnimatedRotation(
-                      turns: _showAdvancedFilters ? 0.5 : 0.0,
-                      duration: const Duration(milliseconds: 200),
-                      child: const Icon(Icons.expand_more),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Collapsible task filter content
-            AnimatedCrossFade(
-              firstChild: const SizedBox.shrink(),
-              secondChild: _buildTaskFilterContent(filter),
-              crossFadeState: _showAdvancedFilters
-                  ? CrossFadeState.showSecond
-                  : CrossFadeState.showFirst,
-              duration: const Duration(milliseconds: 200),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  /// Build the task filter chips (advanced section)
-  Widget _buildTaskFilterContent(DashboardFilter filter) {
-    final theme = Theme.of(context);
-
-    final availableTasks = filter.categoryId != null
-        ? widget.household.predefinedTasks
-            .where((t) => t.categoryId == filter.categoryId)
-            .toList()
-        : widget.household.predefinedTasks
-            .where((t) => t.categoryId != 'archivees')
-            .toList();
-
-    if (availableTasks.isEmpty) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            S.filterByTask,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: availableTasks.map((task) {
-              final isSelected = filter.taskNameFr == task.nameFr;
-              return ChoiceChip(
-                label: Text(
-                  task.nameFr.length > 30
-                      ? '${task.nameFr.substring(0, 27)}...'
-                      : task.nameFr,
-                ),
-                selected: isSelected,
-                onSelected: (_) {
-                  if (isSelected) {
-                    ref.read(dashboardFilterProvider.notifier).state =
-                        filter.copyWith(clearTaskNameFr: true);
-                  } else {
-                    ref.read(dashboardFilterProvider.notifier).state =
-                        filter.copyWith(taskNameFr: task.nameFr);
-                  }
-                },
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
   }
 
   /// Build chart section with title and card

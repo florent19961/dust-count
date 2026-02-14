@@ -39,7 +39,7 @@ class _PredefinedTaskSelectorState extends State<PredefinedTaskSelector> {
     }
     final quickNames = AppConstants.predefinedTasks
         .take(AppConstants.quickTaskCount)
-        .map((t) => t['nameFr'] as String)
+        .map((t) => t.nameFr)
         .toSet();
     return widget.tasks
         .where((t) => quickNames.contains(t.nameFr))
@@ -156,7 +156,7 @@ class _TaskPickerSheet extends StatelessWidget {
           .where((t) =>
               t.categoryId == cat.id &&
               !favoriteIds.contains(t.id) &&
-              t.categoryId != 'archivees')
+              t.categoryId != AppConstants.archivedCategoryId)
           .toList();
       if (catTasks.isNotEmpty) {
         sections.add(_CategorySection(category: cat, tasks: catTasks));

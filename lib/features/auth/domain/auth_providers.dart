@@ -2,6 +2,7 @@ import 'package:dust_count/features/auth/data/auth_repository.dart';
 import 'package:dust_count/features/auth/data/user_repository.dart';
 import 'package:dust_count/features/household/data/household_repository.dart';
 import 'package:dust_count/features/tasks/data/task_repository.dart';
+import 'package:dust_count/shared/exceptions/name_conflict_exception.dart';
 import 'package:dust_count/shared/models/app_user.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -113,7 +114,7 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
           (m) => m.userId != user.userId && m.displayName == newName,
         );
         if (conflict) {
-          throw Exception('nameConflict:${household.name}');
+          throw NameConflictException(household.name);
         }
       }
 
