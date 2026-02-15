@@ -25,7 +25,19 @@ class HouseholdCategory {
     this.emoji,
   });
 
-  IconData get icon => IconData(iconCodePoint, fontFamily: 'MaterialIcons');
+  /// All known icon code points mapped to their const Icons.* values.
+  /// Keeps Flutter's icon tree-shaker working in release builds.
+  static const Map<int, IconData> _knownIcons = {
+    0xf0ff: Icons.cleaning_services,
+    0xe56c: Icons.restaurant,
+    0xe52c: Icons.local_laundry_service,
+    0xe8cc: Icons.shopping_cart,
+    0xe8ba: Icons.handyman,
+    0xe149: Icons.archive,
+    0xe88a: Icons.home,
+  };
+
+  IconData get icon => _knownIcons[iconCodePoint] ?? Icons.home;
   Color get color => Color(colorValue);
   bool get hasEmoji => emoji != null && emoji!.isNotEmpty;
 
