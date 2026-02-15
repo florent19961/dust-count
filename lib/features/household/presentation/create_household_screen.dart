@@ -422,19 +422,19 @@ class _CreateHouseholdScreenState
                   ),
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 8,
                   children: [
                     TextButton.icon(
                       icon: const Icon(Icons.add),
-                      label: Text(S.addTask),
+                      label: Text(S.task),
                       onPressed: () =>
                           _showAddTaskSheet(context, 'menage'),
                     ),
-                    const SizedBox(width: 8),
                     TextButton.icon(
                       icon: const Icon(Icons.add),
-                      label: Text(S.addCategory),
+                      label: Text(S.category),
                       onPressed: () => _showAddCategorySheet(context),
                     ),
                   ],

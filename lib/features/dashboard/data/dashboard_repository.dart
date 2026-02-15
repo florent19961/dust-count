@@ -71,6 +71,8 @@ class DashboardRepository {
     String? categoryId,
     String? taskNameFr,
     TaskDifficulty? difficulty,
+    String? performedBy,
+    int personalFilterIndex = 1,
   }) async {
     Query<Map<String, dynamic>> query = _taskLogsRef(householdId);
 
@@ -84,6 +86,10 @@ class DashboardRepository {
 
     if (difficulty != null) {
       query = query.where('difficulty', isEqualTo: difficulty.name);
+    }
+
+    if (performedBy != null) {
+      query = query.where('performedBy', isEqualTo: performedBy);
     }
 
     query = query
@@ -102,11 +108,20 @@ class DashboardRepository {
       }
     }
 
-    return snapshot.docs
+    final allLogs = snapshot.docs
         .map((doc) => TaskLog.fromFirestore(
             doc as DocumentSnapshot<Map<String, dynamic>>))
-        .where((log) => !log.isPersonal)
         .toList();
+
+    // Filter by personal/household scope
+    switch (personalFilterIndex) {
+      case 0: // all
+        return allLogs;
+      case 2: // personal only
+        return allLogs.where((log) => log.isPersonal).toList();
+      default: // 1 = household only
+        return allLogs.where((log) => !log.isPersonal).toList();
+    }
   }
 
   /// Get total minutes per member for a given period
@@ -117,9 +132,12 @@ class DashboardRepository {
     String? categoryId,
     String? taskNameFr,
     TaskDifficulty? difficulty,
+    String? performedBy,
+    int personalFilterIndex = 1,
   }) async {
     final logs = await _fetchTaskLogs(householdId, start, end,
-        categoryId: categoryId, taskNameFr: taskNameFr, difficulty: difficulty);
+        categoryId: categoryId, taskNameFr: taskNameFr, difficulty: difficulty,
+        performedBy: performedBy, personalFilterIndex: personalFilterIndex);
 
     final Map<String, int> minutesPerMember = {};
 
@@ -140,9 +158,12 @@ class DashboardRepository {
     String? categoryId,
     String? taskNameFr,
     TaskDifficulty? difficulty,
+    String? performedBy,
+    int personalFilterIndex = 1,
   }) async {
     final logs = await _fetchTaskLogs(householdId, start, end,
-        categoryId: categoryId, taskNameFr: taskNameFr, difficulty: difficulty);
+        categoryId: categoryId, taskNameFr: taskNameFr, difficulty: difficulty,
+        performedBy: performedBy, personalFilterIndex: personalFilterIndex);
 
     // Sort by date
     logs.sort((a, b) => a.date.compareTo(b.date));
@@ -193,9 +214,12 @@ class DashboardRepository {
     String? categoryId,
     String? taskNameFr,
     TaskDifficulty? difficulty,
+    String? performedBy,
+    int personalFilterIndex = 1,
   }) async {
     final logs = await _fetchTaskLogs(householdId, start, end,
-        categoryId: categoryId, taskNameFr: taskNameFr, difficulty: difficulty);
+        categoryId: categoryId, taskNameFr: taskNameFr, difficulty: difficulty,
+        performedBy: performedBy, personalFilterIndex: personalFilterIndex);
 
     // Group by user
     final Map<String, List<TaskLog>> logsByUser = {};
@@ -212,7 +236,7 @@ class DashboardRepository {
 
       final totalMinutes = userLogs.fold<int>(
         0,
-        (sum, log) => sum + log.durationMinutes,
+        (total, log) => total + log.durationMinutes,
       );
 
       final difficultyBreakdown = <TaskDifficulty, int>{};
@@ -244,6 +268,8 @@ class DashboardRepository {
     String? categoryId,
     String? taskNameFr,
     TaskDifficulty? difficulty,
+    String? performedBy,
+    int personalFilterIndex = 1,
   }) async {
     final logs = await _fetchTaskLogs(
       householdId,
@@ -252,6 +278,8 @@ class DashboardRepository {
       categoryId: categoryId,
       taskNameFr: taskNameFr,
       difficulty: difficulty,
+      performedBy: performedBy,
+      personalFilterIndex: personalFilterIndex,
     );
 
     final Map<String, List<TaskLog>> logsByUser = {};

@@ -53,79 +53,12 @@ void main() async {
   );
 }
 
-/// Root app widget that handles deep links and initialization
-class DustCountApp extends ConsumerStatefulWidget {
+/// Root app widget
+class DustCountApp extends ConsumerWidget {
   const DustCountApp({super.key});
 
   @override
-  ConsumerState<DustCountApp> createState() => _DustCountAppState();
-}
-
-class _DustCountAppState extends ConsumerState<DustCountApp> {
-  // TODO: Add app_links package for deep link handling
-  // late AppLinks _appLinks;
-  // StreamSubscription<Uri>? _linkSubscription;
-
-  @override
-  void initState() {
-    super.initState();
-    _initDeepLinks();
-  }
-
-  @override
-  void dispose() {
-    // TODO: Cancel deep link subscription
-    // _linkSubscription?.cancel();
-    super.dispose();
-  }
-
-  /// Initialize deep link handling
-  Future<void> _initDeepLinks() async {
-    // TODO: Implement deep link handling with app_links package
-    // This will handle invite codes shared via deep links
-
-    // Example implementation:
-    // _appLinks = AppLinks();
-
-    // Handle initial link if app was opened via deep link
-    // final initialUri = await _appLinks.getInitialAppLink();
-    // if (initialUri != null) {
-    //   _handleDeepLink(initialUri);
-    // }
-
-    // Handle links while app is running
-    // _linkSubscription = _appLinks.uriLinkStream.listen(
-    //   (uri) {
-    //     _handleDeepLink(uri);
-    //   },
-    //   onError: (err) {
-    //     debugPrint('Deep link error: $err');
-    //   },
-    // );
-  }
-
-  /// Handle deep link navigation
-  void _handleDeepLink(Uri uri) {
-    // TODO: Implement deep link routing
-    // Example: dustcount://join/INVITE_CODE
-    // Should navigate to /households/join/INVITE_CODE
-
-    // final router = ref.read(routerProvider);
-    //
-    // if (uri.pathSegments.isNotEmpty) {
-    //   final path = uri.pathSegments.first;
-    //
-    //   if (path == 'join' && uri.pathSegments.length > 1) {
-    //     final inviteCode = uri.pathSegments[1];
-    //     router.go('/households/join/$inviteCode');
-    //   }
-    // }
-
-    debugPrint('Deep link received: $uri');
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return const App();
   }
 }

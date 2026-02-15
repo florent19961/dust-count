@@ -166,6 +166,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                                   ),
                           textAlign: TextAlign.center,
                         ),
+                        const SizedBox(height: 8),
+                        Text(
+                          S.resetEmailSpamHint,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.7),
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                          textAlign: TextAlign.center,
+                        ),
                       ],
                     ),
                   ),

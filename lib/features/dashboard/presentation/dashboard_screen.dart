@@ -138,6 +138,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       taskNameFr: filter.taskNameFr,
       customCategories: widget.household.customCategories,
       predefinedTasks: widget.household.predefinedTasks,
+      members: widget.household.members,
       showTaskFilter: widget.household.predefinedTasks.isNotEmpty,
       onPeriodChanged: (period) {
         if (period == FilterPeriod.custom) {
@@ -170,7 +171,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       onResetAdvanced: () {
         ref.read(dashboardFilterProvider.notifier).state = filter.copyWith(
           clearTaskNameFr: true,
-          clearDifficulty: true,
         );
       },
       onAutoClearCategory: () {

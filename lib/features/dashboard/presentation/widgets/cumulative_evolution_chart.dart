@@ -80,7 +80,9 @@ class CumulativeEvolutionChart extends ConsumerWidget {
                           padding: const EdgeInsets.only(top: 8.0),
                           child: Text(
                             S.formatDateShort(date),
-                            style: theme.textTheme.bodySmall,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontSize: 10,
+                            ),
                           ),
                         );
                       },
@@ -115,20 +117,23 @@ class CumulativeEvolutionChart extends ConsumerWidget {
                     fitInsideHorizontally: true,
                     fitInsideVertically: true,
                     getTooltipItems: (touchedSpots) {
-                      return touchedSpots.map((spot) {
+                      final items = <LineTooltipItem>[];
+                      for (int i = 0; i < touchedSpots.length; i++) {
+                        final spot = touchedSpots[i];
                         final userId = dailyCumulativeData.keys.elementAt(
                           spot.barIndex,
                         );
                         final displayName = memberNames[userId] ?? S.unknownMember;
-                        return LineTooltipItem(
-                          '$displayName\n${S.formatMinutes(spot.y.toInt())}',
+                        items.add(LineTooltipItem(
+                          '$displayName: ${S.formatMinutes(spot.y.toInt())}',
                           TextStyle(
                             color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.normal,
                             fontSize: 12,
                           ),
-                        );
-                      }).toList();
+                        ));
+                      }
+                      return items;
                     },
                   ),
                 ),
@@ -262,9 +267,10 @@ class CumulativeEvolutionChart extends ConsumerWidget {
   /// Get interval for bottom axis labels
   double _getBottomInterval(int dateCount) {
     if (dateCount <= 7) return 1;
-    if (dateCount <= 14) return 2;
-    if (dateCount <= 30) return 5;
-    return 7;
+    if (dateCount <= 14) return 3;
+    if (dateCount <= 21) return 5;
+    if (dateCount <= 45) return 7;
+    return 14;
   }
 
 }

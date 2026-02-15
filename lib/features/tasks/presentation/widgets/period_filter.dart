@@ -43,6 +43,8 @@ class PeriodFilter extends ConsumerWidget {
       showMemberFilter: true,
       showTaskFilter: showTaskFilter,
       showPersonalFilter: true,
+      showDifficultyInAdvanced: true,
+      showPersonalFilterInAdvanced: true,
       onPeriodChanged: (period) => _setPeriod(ref, period, context),
       onCustomDatePicker: () => _showCustomDatePicker(ref, context),
       onPersonalFilterChanged: (index) {
@@ -85,6 +87,7 @@ class PeriodFilter extends ConsumerWidget {
         ref.read(taskFilterProvider.notifier).state = current.copyWith(
           clearTaskNameFr: true,
           clearDifficulty: true,
+          personalFilter: PersonalFilter.all,
         );
       },
       onAutoClearCategory: () {

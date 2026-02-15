@@ -13,6 +13,8 @@ class DashboardFilter {
   final String? categoryId;
   final String? taskNameFr;
   final TaskDifficulty? difficulty;
+  final String? performedBy;
+  final int personalFilterIndex;
 
   const DashboardFilter({
     required this.period,
@@ -21,6 +23,8 @@ class DashboardFilter {
     this.categoryId,
     this.taskNameFr,
     this.difficulty,
+    this.performedBy,
+    this.personalFilterIndex = 1,
   });
 
   /// Get the effective start date based on period
@@ -62,9 +66,12 @@ class DashboardFilter {
     String? categoryId,
     String? taskNameFr,
     TaskDifficulty? difficulty,
+    String? performedBy,
+    int? personalFilterIndex,
     bool clearCategory = false,
     bool clearTaskNameFr = false,
     bool clearDifficulty = false,
+    bool clearPerformedBy = false,
   }) {
     return DashboardFilter(
       period: period ?? this.period,
@@ -73,6 +80,8 @@ class DashboardFilter {
       categoryId: clearCategory ? null : (categoryId ?? this.categoryId),
       taskNameFr: clearTaskNameFr ? null : (taskNameFr ?? this.taskNameFr),
       difficulty: clearDifficulty ? null : (difficulty ?? this.difficulty),
+      performedBy: clearPerformedBy ? null : (performedBy ?? this.performedBy),
+      personalFilterIndex: personalFilterIndex ?? this.personalFilterIndex,
     );
   }
 
@@ -86,12 +95,15 @@ class DashboardFilter {
         other.endDate == endDate &&
         other.categoryId == categoryId &&
         other.taskNameFr == taskNameFr &&
-        other.difficulty == difficulty;
+        other.difficulty == difficulty &&
+        other.performedBy == performedBy &&
+        other.personalFilterIndex == personalFilterIndex;
   }
 
   @override
   int get hashCode =>
-      Object.hash(period, startDate, endDate, categoryId, taskNameFr, difficulty);
+      Object.hash(period, startDate, endDate, categoryId, taskNameFr,
+          difficulty, performedBy, personalFilterIndex);
 }
 
 /// Invalidates all dashboard data providers to force a refresh.
@@ -133,6 +145,8 @@ final minutesPerMemberProvider =
     categoryId: filter.categoryId,
     taskNameFr: filter.taskNameFr,
     difficulty: filter.difficulty,
+    performedBy: filter.performedBy,
+    personalFilterIndex: filter.personalFilterIndex,
   ));
 });
 
@@ -154,6 +168,8 @@ final dailyCumulativeProvider =
     categoryId: filter.categoryId,
     taskNameFr: filter.taskNameFr,
     difficulty: filter.difficulty,
+    performedBy: filter.performedBy,
+    personalFilterIndex: filter.personalFilterIndex,
   ));
 });
 
@@ -175,6 +191,8 @@ final categoryBreakdownProvider =
     categoryId: filter.categoryId,
     taskNameFr: filter.taskNameFr,
     difficulty: filter.difficulty,
+    performedBy: filter.performedBy,
+    personalFilterIndex: filter.personalFilterIndex,
   ));
 });
 
@@ -196,5 +214,7 @@ final leaderboardProvider =
     categoryId: filter.categoryId,
     taskNameFr: filter.taskNameFr,
     difficulty: filter.difficulty,
+    performedBy: filter.performedBy,
+    personalFilterIndex: filter.personalFilterIndex,
   ));
 });

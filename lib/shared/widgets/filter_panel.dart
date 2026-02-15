@@ -36,6 +36,8 @@ class FilterPanel extends StatefulWidget {
   final bool showMemberFilter;
   final bool showTaskFilter;
   final bool showPersonalFilter;
+  final bool showDifficultyInAdvanced;
+  final bool showPersonalFilterInAdvanced;
 
   // --- callbacks ---
   final ValueChanged<FilterPeriod> onPeriodChanged;
@@ -66,6 +68,8 @@ class FilterPanel extends StatefulWidget {
     this.showMemberFilter = false,
     this.showTaskFilter = false,
     this.showPersonalFilter = false,
+    this.showDifficultyInAdvanced = false,
+    this.showPersonalFilterInAdvanced = false,
     required this.onPeriodChanged,
     required this.onCustomDatePicker,
     required this.onCategoryChanged,
@@ -84,10 +88,23 @@ class FilterPanel extends StatefulWidget {
 class _FilterPanelState extends State<FilterPanel> {
   bool _showAdvancedFilters = false;
 
+  bool get _hasAdvancedSection =>
+      widget.showTaskFilter ||
+      widget.showDifficultyInAdvanced ||
+      widget.showPersonalFilterInAdvanced;
+
+  bool get _hasActiveAdvancedFilter {
+    if (widget.taskNameFr != null) return true;
+    if (widget.showDifficultyInAdvanced && widget.difficulty != null) return true;
+    if (widget.showPersonalFilterInAdvanced && widget.personalFilterIndex != 0) {
+      return true;
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasActiveAdvancedFilter = widget.taskNameFr != null;
 
     final categories = getFilterCategories(
       widget.customCategories,
@@ -124,11 +141,13 @@ class _FilterPanelState extends State<FilterPanel> {
             _buildSectionLabel(S.filterByCategory, theme),
             const SizedBox(height: 8),
             _buildCategoryChips(categories),
-            // Difficulty filter
-            const SizedBox(height: 12),
-            _buildSectionLabel(S.filterByDifficulty, theme),
-            const SizedBox(height: 8),
-            _buildDifficultyChips(theme),
+            // Difficulty filter (quick access only if not in advanced)
+            if (!widget.showDifficultyInAdvanced) ...[
+              const SizedBox(height: 12),
+              _buildSectionLabel(S.filterByDifficulty, theme),
+              const SizedBox(height: 8),
+              _buildDifficultyChips(theme),
+            ],
             // Member filter (optional)
             if (widget.showMemberFilter && widget.members.length > 1) ...[
               const SizedBox(height: 12),
@@ -136,18 +155,19 @@ class _FilterPanelState extends State<FilterPanel> {
               const SizedBox(height: 8),
               _buildMemberChips(),
             ],
-            // Personal/household scope filter (optional)
-            if (widget.showPersonalFilter) ...[
+            // Personal/household scope filter (quick access only if not in advanced)
+            if (widget.showPersonalFilter &&
+                !widget.showPersonalFilterInAdvanced) ...[
               const SizedBox(height: 12),
               _buildPersonalFilterChips(theme),
             ],
-            // Advanced task filter (optional)
-            if (widget.showTaskFilter && widget.predefinedTasks.isNotEmpty) ...[
+            // Advanced filters section
+            if (_hasAdvancedSection) ...[
               const SizedBox(height: 12),
-              _buildAdvancedToggle(theme, hasActiveAdvancedFilter),
+              _buildAdvancedToggle(theme, _hasActiveAdvancedFilter),
               AnimatedCrossFade(
                 firstChild: const SizedBox.shrink(),
-                secondChild: _buildTaskFilterContent(theme),
+                secondChild: _buildAdvancedContent(theme),
                 crossFadeState: _showAdvancedFilters
                     ? CrossFadeState.showSecond
                     : CrossFadeState.showFirst,
@@ -333,6 +353,33 @@ class _FilterPanelState extends State<FilterPanel> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAdvancedContent(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Task filter
+          if (widget.showTaskFilter && widget.predefinedTasks.isNotEmpty)
+            _buildTaskFilterContent(theme),
+          // Difficulty in advanced
+          if (widget.showDifficultyInAdvanced) ...[
+            const SizedBox(height: 12),
+            _buildSectionLabel(S.filterByDifficulty, theme),
+            const SizedBox(height: 8),
+            _buildDifficultyChips(theme),
+          ],
+          // Personal filter in advanced
+          if (widget.showPersonalFilterInAdvanced &&
+              widget.showPersonalFilter) ...[
+            const SizedBox(height: 12),
+            _buildPersonalFilterChips(theme),
+          ],
+        ],
       ),
     );
   }

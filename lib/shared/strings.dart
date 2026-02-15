@@ -52,6 +52,8 @@ abstract final class S {
       'Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.';
   static const resetEmailDescription =
       'Si un compte existe avec cet email, vous recevrez bientôt un lien de réinitialisation.';
+  static const resetEmailSpamHint =
+      'Pensez à vérifier votre dossier spam ou courrier indésirable.';
   static const createAccount = 'Créer un compte';
   static const registrationDescription =
       'Créez un nouveau compte pour commencer';
@@ -149,6 +151,7 @@ abstract final class S {
 
   // Tasks
   static const tasks = 'Tâches';
+  static const task = 'Tâche';
   static const addTask = 'Ajouter une tâche';
   static const logTask = 'Enregistrer la tâche';
   static const taskName = 'Nom de la tâche';
@@ -390,13 +393,6 @@ abstract final class S {
   static String tasksAvailable(int count) => '$count tâches disponibles';
 
   static String andMore(int count) => 'et $count de plus...';
-
-  static String taskDeclaredNotification(
-    String name,
-    String task,
-    int minutes,
-  ) =>
-      '$name a terminé : $task ($minutes min)';
 
   static String welcomeBack(String name) => 'Bon retour, $name !';
 
