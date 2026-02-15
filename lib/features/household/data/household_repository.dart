@@ -1,9 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
 import 'package:dust_count/core/constants/app_constants.dart';
 import 'package:dust_count/shared/models/household.dart';
 import 'package:dust_count/shared/models/household_category.dart';
+import 'package:dust_count/shared/strings.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 final householdRepositoryProvider = Provider<HouseholdRepository>(
   (ref) => HouseholdRepository(),
@@ -72,7 +73,7 @@ class HouseholdRepository {
 
       return docRef.id;
     } catch (e) {
-      throw Exception('Failed to create household: ${e.toString()}');
+      throw Exception(S.errorCreateHousehold(e.toString()));
     }
   }
 
@@ -85,7 +86,7 @@ class HouseholdRepository {
       }
       return Household.fromFirestore(doc);
     } catch (e) {
-      throw Exception('Failed to get household: ${e.toString()}');
+      throw Exception(S.errorGetHousehold(e.toString()));
     }
   }
 
@@ -103,7 +104,7 @@ class HouseholdRepository {
         return Household.fromFirestore(snapshot);
       });
     } catch (e) {
-      throw Exception('Failed to watch household: ${e.toString()}');
+      throw Exception(S.errorWatchHousehold(e.toString()));
     }
   }
 
@@ -122,7 +123,7 @@ class HouseholdRepository {
         return snapshot.docs.map((doc) => Household.fromFirestore(doc)).toList();
       });
     } catch (e) {
-      throw Exception('Failed to watch user households: ${e.toString()}');
+      throw Exception(S.errorWatchUserHouseholds(e.toString()));
     }
   }
 
@@ -141,7 +142,7 @@ class HouseholdRepository {
 
       return Household.fromFirestore(querySnapshot.docs.first);
     } catch (e) {
-      throw Exception('Failed to find household by invite code: ${e.toString()}');
+      throw Exception(S.errorFindByInviteCode(e.toString()));
     }
   }
 
@@ -176,7 +177,7 @@ class HouseholdRepository {
         'members': [...currentMembers.map((m) => m.toMap()), newMember.toMap()],
       });
     } catch (e) {
-      throw Exception('Failed to add member to household: ${e.toString()}');
+      throw Exception(S.errorAddMember(e.toString()));
     }
   }
 
@@ -185,7 +186,7 @@ class HouseholdRepository {
     try {
       final household = await getHousehold(householdId);
       if (household == null) {
-        throw Exception('Household not found');
+        throw Exception(S.householdNotFound);
       }
 
       final updatedMembers = household.members.where((m) => m.userId != userId).toList();
@@ -195,7 +196,7 @@ class HouseholdRepository {
         'members': updatedMembers.map((m) => m.toMap()).toList(),
       });
     } catch (e) {
-      throw Exception('Failed to remove member from household: ${e.toString()}');
+      throw Exception(S.errorRemoveMember(e.toString()));
     }
   }
 
@@ -209,8 +210,7 @@ class HouseholdRepository {
         'predefinedTasks': tasks.map((t) => t.toMap()).toList(),
       });
     } catch (e) {
-      throw Exception(
-          'Failed to update predefined tasks: ${e.toString()}');
+      throw Exception(S.errorUpdatePredefinedTasks(e.toString()));
     }
   }
 
@@ -221,7 +221,7 @@ class HouseholdRepository {
         'name': newName,
       });
     } catch (e) {
-      throw Exception('Failed to update household name: ${e.toString()}');
+      throw Exception(S.errorUpdateHouseholdName(e.toString()));
     }
   }
 
@@ -233,7 +233,7 @@ class HouseholdRepository {
   ) async {
     try {
       final household = await getHousehold(householdId);
-      if (household == null) throw Exception('Household not found');
+      if (household == null) throw Exception(S.householdNotFound);
 
       final updatedMembers = household.members.map((m) {
         if (m.userId == userId) {
@@ -250,8 +250,7 @@ class HouseholdRepository {
         'members': updatedMembers.map((m) => m.toMap()).toList(),
       });
     } catch (e) {
-      throw Exception(
-          'Failed to update member display name: ${e.toString()}');
+      throw Exception(S.errorUpdateMemberName(e.toString()));
     }
   }
 
@@ -260,16 +259,16 @@ class HouseholdRepository {
     try {
       final household = await getHousehold(id);
       if (household == null) {
-        throw Exception('Household not found');
+        throw Exception(S.householdNotFound);
       }
 
       if (household.memberIds.isNotEmpty) {
-        throw Exception('Cannot delete household with members');
+        throw Exception(S.cannotDeleteHouseholdWithMembers);
       }
 
       await _firestore.collection(_collectionPath).doc(id).delete();
     } catch (e) {
-      throw Exception('Failed to delete household: ${e.toString()}');
+      throw Exception(S.errorDeleteHousehold(e.toString()));
     }
   }
 
@@ -280,7 +279,7 @@ class HouseholdRepository {
         'predefinedTasks': FieldValue.arrayUnion([task.toMap()]),
       });
     } catch (e) {
-      throw Exception('Failed to add predefined task: ${e.toString()}');
+      throw Exception(S.errorAddPredefinedTask(e.toString()));
     }
   }
 
@@ -289,11 +288,11 @@ class HouseholdRepository {
   Future<void> removePredefinedTask(String householdId, PredefinedTask task) async {
     try {
       final household = await getHousehold(householdId);
-      if (household == null) throw Exception('Household not found');
+      if (household == null) throw Exception(S.householdNotFound);
       final updated = household.predefinedTasks.where((t) => t.id != task.id).toList();
       await updatePredefinedTasks(householdId, updated);
     } catch (e) {
-      throw Exception('Failed to remove predefined task: ${e.toString()}');
+      throw Exception(S.errorRemovePredefinedTask(e.toString()));
     }
   }
 
@@ -301,13 +300,13 @@ class HouseholdRepository {
   Future<void> updatePredefinedTask(String householdId, PredefinedTask updatedTask) async {
     try {
       final household = await getHousehold(householdId);
-      if (household == null) throw Exception('Household not found');
+      if (household == null) throw Exception(S.householdNotFound);
       final updated = household.predefinedTasks.map((t) {
         return t.id == updatedTask.id ? updatedTask : t;
       }).toList();
       await updatePredefinedTasks(householdId, updated);
     } catch (e) {
-      throw Exception('Failed to update predefined task: ${e.toString()}');
+      throw Exception(S.errorUpdatePredefinedTask(e.toString()));
     }
   }
 
@@ -339,7 +338,7 @@ class HouseholdRepository {
           .doc(userId)
           .set({'quickTaskIds': quickTaskIds}, SetOptions(merge: true));
     } catch (e) {
-      throw Exception('Failed to update quick task IDs: ${e.toString()}');
+      throw Exception(S.errorUpdateQuickTaskIds(e.toString()));
     }
   }
 
@@ -347,7 +346,7 @@ class HouseholdRepository {
   Future<void> removeCustomCategory(String householdId, String categoryId) async {
     try {
       final household = await getHousehold(householdId);
-      if (household == null) throw Exception('Household not found');
+      if (household == null) throw Exception(S.householdNotFound);
       final updated = household.customCategories
           .where((c) => c.id != categoryId)
           .toList();
@@ -355,7 +354,7 @@ class HouseholdRepository {
         'customCategories': updated.map((c) => c.toMap()).toList(),
       });
     } catch (e) {
-      throw Exception('Failed to remove custom category: ${e.toString()}');
+      throw Exception(S.errorRemoveCustomCategory(e.toString()));
     }
   }
 
@@ -366,7 +365,7 @@ class HouseholdRepository {
         'customCategories': FieldValue.arrayUnion([category.toMap()]),
       });
     } catch (e) {
-      throw Exception('Failed to add custom category: ${e.toString()}');
+      throw Exception(S.errorAddCustomCategory(e.toString()));
     }
   }
 }

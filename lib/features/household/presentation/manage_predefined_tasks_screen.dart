@@ -11,6 +11,7 @@ import 'package:dust_count/features/household/presentation/widgets/add_predefine
 import 'package:dust_count/features/household/presentation/widgets/edit_predefined_task_sheet.dart';
 import 'package:dust_count/features/household/presentation/widgets/add_category_sheet.dart';
 import 'package:dust_count/features/tasks/data/task_repository.dart';
+import 'package:dust_count/shared/widgets/drag_delete_zone.dart';
 
 /// Unified screen for managing predefined tasks and quick task selection
 class ManagePredefinedTasksScreen extends ConsumerStatefulWidget {
@@ -124,24 +125,10 @@ class _ManagePredefinedTasksScreenState
             for (final cat in customCats) {
               grouped.putIfAbsent(cat.id, () => []);
             }
-            final categories = grouped.keys.toList()
-              ..sort((a, b) {
-                if (a == AppConstants.archivedCategoryId) return 1;
-                if (b == AppConstants.archivedCategoryId) return -1;
-                // Built-in categories first, then custom
-                final aBuiltIn = builtInCategories.any((c) => c.id == a);
-                final bBuiltIn = builtInCategories.any((c) => c.id == b);
-                if (aBuiltIn && !bBuiltIn) return -1;
-                if (!aBuiltIn && bBuiltIn) return 1;
-                if (aBuiltIn && bBuiltIn) {
-                  final aIdx =
-                      builtInCategories.indexWhere((c) => c.id == a);
-                  final bIdx =
-                      builtInCategories.indexWhere((c) => c.id == b);
-                  return aIdx.compareTo(bIdx);
-                }
-                return a.compareTo(b);
-              });
+            final categories = sortCategoryIds(
+              grouped.keys,
+              includeArchived: true,
+            );
 
             return SingleChildScrollView(
               padding: EdgeInsets.only(bottom: _isDragging ? 88 : 16),
@@ -166,58 +153,12 @@ class _ManagePredefinedTasksScreenState
             child: Text('${S.error}: $error'),
           ),
         ),
-                  if (_isDragging) _buildTrashZone(),
+                  if (_isDragging) DragDeleteZone(onDelete: _confirmDeleteTaskViaDrag),
                 ],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildTrashZone() {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: DragTarget<PredefinedTask>(
-        onWillAcceptWithDetails: (_) => true,
-        onAcceptWithDetails: (details) => _confirmDeleteTaskViaDrag(details.data),
-        builder: (context, candidateData, rejectedData) {
-          final isHovered = candidateData.isNotEmpty;
-          final theme = Theme.of(context);
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            height: 72,
-            decoration: BoxDecoration(
-              color: isHovered
-                  ? theme.colorScheme.error
-                  : theme.colorScheme.errorContainer,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  isHovered ? Icons.delete_forever : Icons.delete_outline,
-                  color: isHovered
-                      ? theme.colorScheme.onError
-                      : theme.colorScheme.onErrorContainer,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  S.dropToDelete,
-                  style: TextStyle(
-                    color: isHovered
-                        ? theme.colorScheme.onError
-                        : theme.colorScheme.onErrorContainer,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
       ),
     );
   }

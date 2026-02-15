@@ -26,12 +26,35 @@ import 'package:dust_count/features/tasks/presentation/task_edit_screen.dart';
 import 'package:dust_count/shared/models/task_log.dart';
 import 'package:dust_count/shared/models/household.dart';
 
+/// Centralized route path constants
+abstract class AppRoutes {
+  static const splash = '/splash';
+  static const onboarding = '/onboarding';
+  static const login = '/login';
+  static const register = '/register';
+  static const forgotPassword = '/forgot-password';
+  static const households = '/households';
+  static const createHousehold = '/households/create';
+  static const joinHousehold = '/households/join';
+  static const profile = '/profile';
+
+  /// Dynamic route helpers
+  static String household(String id) => '/household/$id';
+  static String householdSettings(String id) => '/household/$id/settings';
+  static String manageTasks(String id) => '/household/$id/settings/tasks';
+  static String taskDetail(String householdId, String taskId) =>
+      '/household/$householdId/task/$taskId';
+  static String taskEdit(String householdId, String taskId) =>
+      '/household/$householdId/task/$taskId/edit';
+  static String joinHouseholdWithCode(String code) => '/households/join/$code';
+}
+
 /// Router provider that creates the GoRouter instance
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
 
   return GoRouter(
-    initialLocation: '/splash',
+    initialLocation: AppRoutes.splash,
     debugLogDiagnostics: true,
 
     // Refresh router when auth state changes
@@ -41,11 +64,11 @@ final routerProvider = Provider<GoRouter>((ref) {
 
     redirect: (BuildContext context, GoRouterState state) {
       final isAuthenticated = authState.value != null;
-      final isOnAuthPage = state.matchedLocation.startsWith('/login') ||
-          state.matchedLocation.startsWith('/register') ||
-          state.matchedLocation.startsWith('/forgot-password') ||
-          state.matchedLocation == '/onboarding';
-      final isOnSplash = state.matchedLocation == '/splash';
+      final isOnAuthPage = state.matchedLocation.startsWith(AppRoutes.login) ||
+          state.matchedLocation.startsWith(AppRoutes.register) ||
+          state.matchedLocation.startsWith(AppRoutes.forgotPassword) ||
+          state.matchedLocation == AppRoutes.onboarding;
+      final isOnSplash = state.matchedLocation == AppRoutes.splash;
 
       // Don't redirect if on splash screen (let it handle the flow)
       if (isOnSplash) {
@@ -54,12 +77,12 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // If not authenticated and not on auth page, redirect to login
       if (!isAuthenticated && !isOnAuthPage) {
-        return '/login';
+        return AppRoutes.login;
       }
 
       // If authenticated and on auth page, redirect to households
       if (isAuthenticated && isOnAuthPage) {
-        return '/households';
+        return AppRoutes.households;
       }
 
       return null;
@@ -207,7 +230,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () => context.go('/households'),
+              onPressed: () => context.go(AppRoutes.households),
               child: const Text('Go to Home'),
             ),
           ],

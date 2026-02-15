@@ -10,7 +10,9 @@ import 'package:dust_count/shared/utils/category_helpers.dart';
 import 'package:dust_count/features/tasks/domain/task_providers.dart';
 import 'package:dust_count/features/tasks/presentation/widgets/predefined_task_selector.dart';
 import 'package:dust_count/shared/widgets/difficulty_badge.dart';
+import 'package:dust_count/shared/widgets/duration_field.dart';
 import 'package:dust_count/app/theme/app_colors.dart';
+import 'package:dust_count/features/dashboard/domain/dashboard_providers.dart';
 
 /// Screen for editing an existing task log.
 ///
@@ -38,6 +40,7 @@ class _TaskEditScreenState extends ConsumerState<TaskEditScreen> {
   late DateTime _selectedDate;
   late int _durationMinutes;
   late TaskDifficulty _difficulty;
+  late bool _isPersonal;
 
   // Performer selection
   late String _performedBy;
@@ -54,6 +57,7 @@ class _TaskEditScreenState extends ConsumerState<TaskEditScreen> {
     _selectedDate = widget.taskLog.date;
     _durationMinutes = widget.taskLog.durationMinutes;
     _difficulty = widget.taskLog.difficulty;
+    _isPersonal = widget.taskLog.isPersonal;
     _durationController.text = _durationMinutes.toString();
     _performedBy = widget.taskLog.performedBy;
     _performedByName = widget.taskLog.performedByName;
@@ -164,6 +168,7 @@ class _TaskEditScreenState extends ConsumerState<TaskEditScreen> {
       date: _selectedDate,
       performedBy: _performedBy,
       performedByName: _performedByName,
+      isPersonal: _isPersonal,
     );
 
     final controller = ref.read(taskControllerProvider.notifier);
@@ -176,6 +181,7 @@ class _TaskEditScreenState extends ConsumerState<TaskEditScreen> {
     state.when(
       data: (_) {
         if (mounted) {
+          invalidateDashboardProviders(ref);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(S.taskUpdatedSuccess),
@@ -330,61 +336,10 @@ class _TaskEditScreenState extends ConsumerState<TaskEditScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                IconButton(
-                  onPressed: () {
-                    final current =
-                        int.tryParse(_durationController.text) ?? _durationMinutes;
-                    if (current > 5) {
-                      final newValue = current - 5;
-                      setState(() {
-                        _durationMinutes = newValue;
-                      });
-                      _durationController.text = newValue.toString();
-                    }
-                  },
-                  icon: const Icon(Icons.remove_circle_outline),
-                ),
-                Expanded(
-                  child: TextFormField(
-                    controller: _durationController,
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    decoration: const InputDecoration(
-                      suffixText: 'min',
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (value) {
-                      final parsed = int.tryParse(value);
-                      if (parsed != null && parsed > 0) {
-                        setState(() {
-                          _durationMinutes = parsed;
-                        });
-                      }
-                    },
-                    validator: (value) {
-                      final parsed = int.tryParse(value ?? '');
-                      if (parsed == null || parsed <= 0) {
-                        return S.pleaseEnterValidDuration;
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                IconButton(
-                  onPressed: () {
-                    final current =
-                        int.tryParse(_durationController.text) ?? _durationMinutes;
-                    final newValue = current + 5;
-                    setState(() {
-                      _durationMinutes = newValue;
-                    });
-                    _durationController.text = newValue.toString();
-                  },
-                  icon: const Icon(Icons.add_circle_outline),
-                ),
-              ],
+            DurationField(
+              controller: _durationController,
+              durationMinutes: _durationMinutes,
+              onChanged: (value) => setState(() => _durationMinutes = value),
             ),
             const SizedBox(height: 16),
 
@@ -408,7 +363,27 @@ class _TaskEditScreenState extends ConsumerState<TaskEditScreen> {
                 );
               }).toList(),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+
+            // Personal task toggle
+            SwitchListTile(
+              title: Text(S.personalTask),
+              subtitle: Text(
+                S.personalTaskDescription,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              secondary: Icon(
+                Icons.person_outline,
+                color: _isPersonal ? colorScheme.primary : null,
+              ),
+              value: _isPersonal,
+              onChanged: (value) => setState(() => _isPersonal = value),
+              contentPadding: EdgeInsets.zero,
+            ),
+            const SizedBox(height: 16),
 
             // Submit
             FilledButton(

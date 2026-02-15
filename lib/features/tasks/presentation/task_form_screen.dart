@@ -9,6 +9,7 @@ import 'package:dust_count/features/tasks/domain/task_providers.dart';
 import 'package:dust_count/features/tasks/presentation/widgets/predefined_task_selector.dart';
 import 'package:dust_count/features/tasks/presentation/task_timer_screen.dart';
 import 'package:dust_count/shared/widgets/difficulty_badge.dart';
+import 'package:dust_count/shared/widgets/duration_field.dart';
 import 'package:dust_count/features/household/domain/household_providers.dart';
 import 'package:dust_count/features/dashboard/domain/dashboard_providers.dart';
 
@@ -46,6 +47,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   DateTime _selectedDate = DateTime.now();
   int _durationMinutes = 15;
   TaskDifficulty _difficulty = TaskDifficulty.reloo;
+  bool _isPersonal = false;
 
   @override
   void initState() {
@@ -67,6 +69,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       _selectedDate = DateTime.now();
       _durationMinutes = 15;
       _difficulty = TaskDifficulty.reloo;
+      _isPersonal = false;
     });
     _durationController.text = '15';
     _formKey.currentState?.reset();
@@ -207,6 +210,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       difficulty: _difficulty,
       date: _selectedDate,
       comment: null,
+      isPersonal: _isPersonal,
     );
 
     final state = ref.read(taskControllerProvider);
@@ -214,10 +218,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     state.when(
       data: (_) {
         if (mounted) {
-          ref.invalidate(minutesPerMemberProvider);
-          ref.invalidate(dailyCumulativeProvider);
-          ref.invalidate(leaderboardProvider);
-          ref.invalidate(categoryBreakdownProvider);
+          invalidateDashboardProviders(ref);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(S.taskAddedSuccess),
@@ -314,61 +315,10 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              IconButton(
-                onPressed: () {
-                  final current =
-                      int.tryParse(_durationController.text) ?? _durationMinutes;
-                  if (current > 5) {
-                    final newValue = current - 5;
-                    setState(() {
-                      _durationMinutes = newValue;
-                    });
-                    _durationController.text = newValue.toString();
-                  }
-                },
-                icon: const Icon(Icons.remove_circle_outline),
-              ),
-              Expanded(
-                child: TextFormField(
-                  controller: _durationController,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  decoration: const InputDecoration(
-                    suffixText: 'min',
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: (value) {
-                    final parsed = int.tryParse(value);
-                    if (parsed != null && parsed > 0) {
-                      setState(() {
-                        _durationMinutes = parsed;
-                      });
-                    }
-                  },
-                  validator: (value) {
-                    final parsed = int.tryParse(value ?? '');
-                    if (parsed == null || parsed <= 0) {
-                      return S.pleaseEnterValidDuration;
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              IconButton(
-                onPressed: () {
-                  final current =
-                      int.tryParse(_durationController.text) ?? _durationMinutes;
-                  final newValue = current + 5;
-                  setState(() {
-                    _durationMinutes = newValue;
-                  });
-                  _durationController.text = newValue.toString();
-                },
-                icon: const Icon(Icons.add_circle_outline),
-              ),
-            ],
+          DurationField(
+            controller: _durationController,
+            durationMinutes: _durationMinutes,
+            onChanged: (value) => setState(() => _durationMinutes = value),
           ),
           const SizedBox(height: 8),
           // Prominent timer button
@@ -401,7 +351,25 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               );
             }).toList(),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            title: Text(S.personalTask),
+            subtitle: Text(
+              S.personalTaskDescription,
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            secondary: Icon(
+              Icons.person_outline,
+              color: _isPersonal ? colorScheme.primary : null,
+            ),
+            value: _isPersonal,
+            onChanged: (value) => setState(() => _isPersonal = value),
+            contentPadding: EdgeInsets.zero,
+          ),
+          const SizedBox(height: 16),
           FilledButton(
             onPressed: state.isLoading ? null : _submitForm,
             child: state.isLoading

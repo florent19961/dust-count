@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dust_count/app/router.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:dust_count/shared/models/household.dart';
 import 'package:dust_count/features/tasks/presentation/task_history_screen.dart';
@@ -98,7 +99,7 @@ class _HouseholdHomeScreenState extends ConsumerState<HouseholdHomeScreen> {
                               Navigator.pop(sheetContext);
                               if (h.id != widget.householdId) {
                                 ref.read(currentHouseholdIdProvider.notifier).state = h.id;
-                                context.go('/household/${h.id}');
+                                context.go(AppRoutes.household(h.id));
                               }
                             },
                           ),
@@ -119,7 +120,7 @@ class _HouseholdHomeScreenState extends ConsumerState<HouseholdHomeScreen> {
                     title: Text(S.createHousehold),
                     onTap: () {
                       Navigator.pop(sheetContext);
-                      context.push('/households/create');
+                      context.push(AppRoutes.createHousehold);
                     },
                   ),
                   ListTile(
@@ -127,7 +128,7 @@ class _HouseholdHomeScreenState extends ConsumerState<HouseholdHomeScreen> {
                     title: Text(S.joinHousehold),
                     onTap: () {
                       Navigator.pop(sheetContext);
-                      context.push('/households/join');
+                      context.push(AppRoutes.joinHousehold);
                     },
                   ),
                 ],
@@ -218,7 +219,7 @@ class _HouseholdHomeScreenState extends ConsumerState<HouseholdHomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.person_outline),
-            onPressed: () => context.push('/profile'),
+            onPressed: () => context.push(AppRoutes.profile),
             tooltip: S.profile,
           ),
         ],

@@ -193,4 +193,21 @@ abstract class AppConstants {
 
   /// Category ID for archived/deleted tasks
   static const String archivedCategoryId = 'archivees';
+
+  /// SharedPreferences key for onboarding completion
+  static const String onboardingSeenKey = 'onboarding_seen';
+
+  /// Emoji for each difficulty level
+  static const Map<TaskDifficulty, String> difficultyEmojis = {
+    TaskDifficulty.plaisir: '\u{1F60A}', // 😊
+    TaskDifficulty.reloo: '\u{1F610}', // 😐
+    TaskDifficulty.infernal: '\u{1F629}', // 😩
+  };
+
+  /// French label for each difficulty level
+  static const Map<TaskDifficulty, String> difficultyLabels = {
+    TaskDifficulty.plaisir: 'Plaisir',
+    TaskDifficulty.reloo: 'Relou',
+    TaskDifficulty.infernal: 'Infernal',
+  };
 }

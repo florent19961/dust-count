@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:dust_count/app/theme/app_colors.dart';
+import 'package:dust_count/shared/widgets/chart_empty_state.dart';
 
 /// Pie chart showing time distribution across household members
 class TimeDistributionChart extends ConsumerStatefulWidget {
@@ -29,28 +30,7 @@ class _TimeDistributionChartState
     final theme = Theme.of(context);
 
     if (widget.minutesPerMember.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.pie_chart_outline,
-                size: 64,
-                color: theme.colorScheme.onSurface.withOpacity(0.3),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                S.noDataAvailable,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      return const ChartEmptyState(icon: Icons.pie_chart_outline);
     }
 
     final totalMinutes = widget.minutesPerMember.values.fold<int>(
@@ -139,7 +119,7 @@ class _TimeDistributionChartState
         final index = entry.key;
         final userId = entry.value.key;
         final minutes = entry.value.value;
-        final displayName = widget.memberNames[userId] ?? 'Unknown';
+        final displayName = widget.memberNames[userId] ?? S.unknownMember;
 
         return InkWell(
           onTap: () {

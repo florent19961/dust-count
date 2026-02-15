@@ -36,13 +36,21 @@ class PeriodFilter extends ConsumerWidget {
       difficulty: filter.difficulty,
       taskNameFr: filter.taskNameFr,
       performedBy: filter.performedBy,
+      personalFilterIndex: filter.personalFilter.index,
       customCategories: customCategories,
       predefinedTasks: predefinedTasks,
       members: members,
       showMemberFilter: true,
       showTaskFilter: showTaskFilter,
+      showPersonalFilter: true,
       onPeriodChanged: (period) => _setPeriod(ref, period, context),
       onCustomDatePicker: () => _showCustomDatePicker(ref, context),
+      onPersonalFilterChanged: (index) {
+        final current = ref.read(taskFilterProvider);
+        ref.read(taskFilterProvider.notifier).state = current.copyWith(
+          personalFilter: PersonalFilter.values[index],
+        );
+      },
       onCategoryChanged: (categoryId) {
         final current = ref.read(taskFilterProvider);
         ref.read(taskFilterProvider.notifier).state = current.copyWith(

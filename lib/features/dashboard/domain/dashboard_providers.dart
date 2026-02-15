@@ -94,6 +94,16 @@ class DashboardFilter {
       Object.hash(period, startDate, endDate, categoryId, taskNameFr, difficulty);
 }
 
+/// Invalidates all dashboard data providers to force a refresh.
+///
+/// Call after any mutation (add, edit, delete) that affects task logs.
+void invalidateDashboardProviders(WidgetRef ref) {
+  ref.invalidate(minutesPerMemberProvider);
+  ref.invalidate(dailyCumulativeProvider);
+  ref.invalidate(leaderboardProvider);
+  ref.invalidate(categoryBreakdownProvider);
+}
+
 /// Provider for dashboard repository
 final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
   return DashboardRepository();

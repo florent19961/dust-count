@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dust_count/shared/models/app_user.dart';
+import 'package:dust_count/shared/strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final userRepositoryProvider = Provider<UserRepository>((ref) => UserRepository());
@@ -12,7 +13,7 @@ class UserRepository {
     try {
       await _firestore.collection(_collectionPath).doc(user.userId).set(user.toFirestore());
     } catch (e) {
-      throw Exception('Failed to create user: ${e.toString()}');
+      throw Exception(S.errorCreateUser(e.toString()));
     }
   }
 
@@ -24,7 +25,7 @@ class UserRepository {
       }
       return AppUser.fromFirestore(doc);
     } catch (e) {
-      throw Exception('Failed to get user: ${e.toString()}');
+      throw Exception(S.errorGetUser(e.toString()));
     }
   }
 
@@ -32,7 +33,7 @@ class UserRepository {
     try {
       await _firestore.collection(_collectionPath).doc(user.userId).update(user.toFirestore());
     } catch (e) {
-      throw Exception('Failed to update user: ${e.toString()}');
+      throw Exception(S.errorUpdateUser(e.toString()));
     }
   }
 
@@ -49,7 +50,7 @@ class UserRepository {
         return AppUser.fromFirestore(snapshot);
       });
     } catch (e) {
-      throw Exception('Failed to watch user: ${e.toString()}');
+      throw Exception(S.errorWatchUser(e.toString()));
     }
   }
 
@@ -59,7 +60,7 @@ class UserRepository {
         'householdIds': FieldValue.arrayUnion([householdId]),
       });
     } catch (e) {
-      throw Exception('Failed to add household to user: ${e.toString()}');
+      throw Exception(S.errorAddHouseholdToUser(e.toString()));
     }
   }
 
@@ -69,7 +70,7 @@ class UserRepository {
         'householdIds': FieldValue.arrayRemove([householdId]),
       });
     } catch (e) {
-      throw Exception('Failed to remove household from user: ${e.toString()}');
+      throw Exception(S.errorRemoveHouseholdFromUser(e.toString()));
     }
   }
 
@@ -79,8 +80,7 @@ class UserRepository {
         'displayName': newDisplayName,
       });
     } catch (e) {
-      throw Exception(
-          'Failed to update display name: ${e.toString()}');
+      throw Exception(S.errorUpdateUserDisplayName(e.toString()));
     }
   }
 
@@ -90,7 +90,7 @@ class UserRepository {
         'locale': locale,
       });
     } catch (e) {
-      throw Exception('Failed to update locale: ${e.toString()}');
+      throw Exception(S.errorUpdateLocale(e.toString()));
     }
   }
 }

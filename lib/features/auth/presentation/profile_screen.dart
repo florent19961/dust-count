@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dust_count/app/router.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:dust_count/shared/utils/string_helpers.dart';
 import 'package:dust_count/shared/exceptions/name_conflict_exception.dart';
@@ -102,7 +103,7 @@ class ProfileScreen extends ConsumerWidget {
                     if (confirmed == true) {
                       await ref.read(authControllerProvider.notifier).signOut();
                       if (context.mounted) {
-                        context.go('/login');
+                        context.go(AppRoutes.login);
                       }
                     }
                   },

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dust_count/app/router.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:dust_count/features/auth/domain/auth_providers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -96,7 +97,7 @@ class _JoinHouseholdScreenState extends ConsumerState<JoinHouseholdScreen> {
     if (!mounted) return;
 
     if (householdId == null) {
-      context.go('/households');
+      context.go(AppRoutes.households);
       return;
     }
 
@@ -126,7 +127,7 @@ class _JoinHouseholdScreenState extends ConsumerState<JoinHouseholdScreen> {
     if (!mounted) return;
 
     ref.read(currentHouseholdIdProvider.notifier).state = householdId;
-    context.go('/household/$householdId');
+    context.go(AppRoutes.household(householdId));
   }
 
   /// Post-join dialog for returning members — propose renaming back

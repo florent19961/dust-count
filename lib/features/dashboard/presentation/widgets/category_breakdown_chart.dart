@@ -4,6 +4,7 @@ import 'package:dust_count/shared/strings.dart';
 import 'package:dust_count/shared/models/household_category.dart';
 import 'package:dust_count/shared/utils/category_helpers.dart';
 import 'package:dust_count/features/dashboard/data/dashboard_repository.dart';
+import 'package:dust_count/shared/widgets/chart_empty_state.dart';
 
 /// Toggle mode for the category breakdown chart
 enum _ViewMode { minutes, count }
@@ -31,28 +32,7 @@ class _CategoryBreakdownChartState extends State<CategoryBreakdownChart> {
     final theme = Theme.of(context);
 
     if (widget.entries.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.bar_chart,
-                size: 64,
-                color: theme.colorScheme.onSurface.withOpacity(0.3),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                S.noDataAvailable,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      return const ChartEmptyState(icon: Icons.bar_chart);
     }
 
     final allCategoryIds = _getAllCategoryIds();

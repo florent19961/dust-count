@@ -46,4 +46,9 @@ extension DateTimeExtensions on DateTime {
   String formatFull() {
     return '${day.toString().padLeft(2, '0')}/${month.toString().padLeft(2, '0')}/$year';
   }
+
+  /// Format date as YYYY-MM-DD for consistent map keys
+  String toDateKey() {
+    return '$year-${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
+  }
 }

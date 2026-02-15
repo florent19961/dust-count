@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_constants.dart';
+import 'package:dust_count/core/constants/app_constants.dart';
+
 
 /// Badge widget displaying task difficulty with emoji and colored background
 class DifficultyBadge extends StatelessWidget {
@@ -15,53 +16,26 @@ class DifficultyBadge extends StatelessWidget {
     super.key,
   });
 
-  /// Get emoji for difficulty level
-  String get _emoji {
-    switch (difficulty) {
-      case TaskDifficulty.plaisir:
-        return '😊';
-      case TaskDifficulty.reloo:
-        return '😐';
-      case TaskDifficulty.infernal:
-        return '😩';
-    }
-  }
+  String get _emoji => AppConstants.difficultyEmojis[difficulty]!;
+  String get _label => AppConstants.difficultyLabels[difficulty]!;
 
-  /// Get label for difficulty level
-  String get _label {
-    switch (difficulty) {
-      case TaskDifficulty.plaisir:
-        return 'Plaisir';
-      case TaskDifficulty.reloo:
-        return 'Relou';
-      case TaskDifficulty.infernal:
-        return 'Infernal';
-    }
-  }
+  /// Background color for difficulty badge (dark theme tints)
+  static final _backgroundColors = {
+    TaskDifficulty.plaisir: const Color(0xFF1B5E20),
+    TaskDifficulty.reloo: const Color(0xFFE65100).withOpacity(0.25),
+    TaskDifficulty.infernal: const Color(0xFFB71C1C).withOpacity(0.25),
+  };
 
-  /// Get background color for difficulty level (dark theme)
-  Color get _backgroundColor {
-    switch (difficulty) {
-      case TaskDifficulty.plaisir:
-        return const Color(0xFF1B5E20);
-      case TaskDifficulty.reloo:
-        return const Color(0xFFE65100).withOpacity(0.25);
-      case TaskDifficulty.infernal:
-        return const Color(0xFFB71C1C).withOpacity(0.25);
-    }
-  }
+  Color get _backgroundColor => _backgroundColors[difficulty]!;
 
-  /// Get text color for difficulty level (dark theme)
-  Color get _textColor {
-    switch (difficulty) {
-      case TaskDifficulty.plaisir:
-        return const Color(0xFFA5D6A7);
-      case TaskDifficulty.reloo:
-        return const Color(0xFFFFCC80);
-      case TaskDifficulty.infernal:
-        return const Color(0xFFEF9A9A);
-    }
-  }
+  /// Text color for difficulty badge (dark theme)
+  static const _textColors = {
+    TaskDifficulty.plaisir: Color(0xFFA5D6A7),
+    TaskDifficulty.reloo: Color(0xFFFFCC80),
+    TaskDifficulty.infernal: Color(0xFFEF9A9A),
+  };
+
+  Color get _textColor => _textColors[difficulty]!;
 
   @override
   Widget build(BuildContext context) {

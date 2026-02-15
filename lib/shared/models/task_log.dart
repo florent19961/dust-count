@@ -37,6 +37,9 @@ class TaskLog {
   /// Optional comment about the task
   final String? comment;
 
+  /// Whether this task is personal (excluded from household stats)
+  final bool isPersonal;
+
   /// Log entry creation timestamp
   final DateTime createdAt;
 
@@ -52,6 +55,7 @@ class TaskLog {
     required this.durationMinutes,
     required this.difficulty,
     this.comment,
+    this.isPersonal = false,
     required this.createdAt,
   });
 
@@ -60,19 +64,21 @@ class TaskLog {
     final data = doc.data()!;
     return TaskLog(
       id: doc.id,
-      taskName: data['taskName'] as String,
+      taskName: (data['taskName'] as String?) ?? '',
       taskNameFr: data['taskNameFr'] as String?,
       taskNameEn: data['taskNameEn'] as String?,
-      categoryId: migrateCategory(data['category'] as String),
-      performedBy: data['performedBy'] as String,
-      performedByName: data['performedByName'] as String,
-      date: (data['date'] as Timestamp).toDate(),
-      durationMinutes: data['durationMinutes'] as int,
+      categoryId: migrateCategory((data['category'] as String?) ?? 'divers'),
+      performedBy: (data['performedBy'] as String?) ?? '',
+      performedByName: (data['performedByName'] as String?) ?? '',
+      date: (data['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      durationMinutes: (data['durationMinutes'] as int?) ?? 0,
       difficulty: TaskDifficulty.values.firstWhere(
-        (e) => e.name == data['difficulty'] as String,
+        (e) => e.name == (data['difficulty'] as String?),
+        orElse: () => TaskDifficulty.plaisir,
       ),
       comment: data['comment'] as String?,
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      isPersonal: (data['isPersonal'] as bool?) ?? false,
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 
@@ -89,6 +95,7 @@ class TaskLog {
       'durationMinutes': durationMinutes,
       'difficulty': difficulty.name,
       'comment': comment,
+      'isPersonal': isPersonal,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -106,6 +113,7 @@ class TaskLog {
     int? durationMinutes,
     TaskDifficulty? difficulty,
     String? comment,
+    bool? isPersonal,
     DateTime? createdAt,
   }) {
     return TaskLog(
@@ -120,6 +128,7 @@ class TaskLog {
       durationMinutes: durationMinutes ?? this.durationMinutes,
       difficulty: difficulty ?? this.difficulty,
       comment: comment ?? this.comment,
+      isPersonal: isPersonal ?? this.isPersonal,
       createdAt: createdAt ?? this.createdAt,
     );
   }

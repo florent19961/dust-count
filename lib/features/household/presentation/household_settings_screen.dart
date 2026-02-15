@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dust_count/app/router.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:dust_count/shared/models/household.dart';
 import 'package:dust_count/features/household/domain/household_providers.dart';
@@ -334,7 +335,7 @@ class HouseholdSettingsScreen extends ConsumerWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => context.push('/household/${household.id}/settings/tasks'),
+        onTap: () => context.push(AppRoutes.manageTasks(household.id)),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -461,7 +462,7 @@ class HouseholdSettingsScreen extends ConsumerWidget {
             .leaveHousehold(householdId);
 
         if (context.mounted) {
-          context.go('/households');
+          context.go(AppRoutes.households);
         }
       } catch (e) {
         if (context.mounted) {

@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dust_count/core/constants/app_constants.dart';
 import 'package:dust_count/shared/models/task_log.dart';
+import 'package:dust_count/shared/strings.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final taskRepositoryProvider = Provider<TaskRepository>((ref) {
   return TaskRepository();
@@ -27,7 +28,7 @@ class TaskRepository {
       final docRef = await _taskLogsRef(householdId).add(log.toFirestore());
       return docRef.id;
     } catch (e) {
-      throw Exception('Failed to add task log: ${e.toString()}');
+      throw Exception(S.errorAddTaskLog(e.toString()));
     }
   }
 
@@ -36,7 +37,7 @@ class TaskRepository {
     try {
       await _taskLogsRef(householdId).doc(log.id).update(log.toFirestore());
     } catch (e) {
-      throw Exception('Failed to update task log: ${e.toString()}');
+      throw Exception(S.errorUpdateTaskLog(e.toString()));
     }
   }
 
@@ -45,7 +46,7 @@ class TaskRepository {
     try {
       await _taskLogsRef(householdId).doc(logId).delete();
     } catch (e) {
-      throw Exception('Failed to delete task log: ${e.toString()}');
+      throw Exception(S.errorDeleteTaskLog(e.toString()));
     }
   }
 
@@ -97,7 +98,7 @@ class TaskRepository {
             .toList();
       });
     } catch (e) {
-      throw Exception('Failed to watch task logs: ${e.toString()}');
+      throw Exception(S.errorWatchTaskLogs(e.toString()));
     }
   }
 
@@ -143,7 +144,7 @@ class TaskRepository {
               doc as DocumentSnapshot<Map<String, dynamic>>))
           .toList();
     } catch (e) {
-      throw Exception('Failed to get task logs: ${e.toString()}');
+      throw Exception(S.errorGetTaskLogs(e.toString()));
     }
   }
 
@@ -155,7 +156,7 @@ class TaskRepository {
           .get();
       return snapshot.docs.length;
     } catch (e) {
-      throw Exception('Failed to count task logs: ${e.toString()}');
+      throw Exception(S.errorCountTaskLogs(e.toString()));
     }
   }
 
@@ -177,12 +178,32 @@ class TaskRepository {
       final data = snapshot.docs.first.data();
       return (true, data['performedByName'] as String?);
     } catch (e) {
-      throw Exception('Failed to check tasks from user: ${e.toString()}');
+      throw Exception(S.errorCheckUserTasks(e.toString()));
+    }
+  }
+
+  /// Applies a batch update to all documents in a query snapshot.
+  /// Processes in chunks of 500 (Firestore batch write limit).
+  Future<void> _batchUpdate(
+    QuerySnapshot<Map<String, dynamic>> snapshot,
+    Map<String, dynamic> Function(QueryDocumentSnapshot<Map<String, dynamic>>) getUpdateData,
+  ) async {
+    if (snapshot.docs.isEmpty) return;
+
+    for (var i = 0; i < snapshot.docs.length; i += 500) {
+      final chunk = snapshot.docs.sublist(
+        i,
+        i + 500 > snapshot.docs.length ? snapshot.docs.length : i + 500,
+      );
+      final batch = _firestore.batch();
+      for (final doc in chunk) {
+        batch.update(doc.reference, getUpdateData(doc));
+      }
+      await batch.commit();
     }
   }
 
   /// Renames task logs matching a given French task name
-  /// Processes in batches of 500 (Firestore batch limit)
   Future<void> renameTaskLogs(
     String householdId,
     String oldNameFr,
@@ -194,34 +215,17 @@ class TaskRepository {
           .where('taskNameFr', isEqualTo: oldNameFr)
           .get();
 
-      if (snapshot.docs.isEmpty) return;
-
-      final chunks = <List<QueryDocumentSnapshot<Map<String, dynamic>>>>[];
-      for (var i = 0; i < snapshot.docs.length; i += 500) {
-        chunks.add(snapshot.docs.sublist(
-          i,
-          i + 500 > snapshot.docs.length ? snapshot.docs.length : i + 500,
-        ));
-      }
-
-      for (final chunk in chunks) {
-        final batch = _firestore.batch();
-        for (final doc in chunk) {
-          batch.update(doc.reference, {
-            'taskName': newNameFr,
-            'taskNameFr': newNameFr,
-            'taskNameEn': newNameEn,
-          });
-        }
-        await batch.commit();
-      }
+      await _batchUpdate(snapshot, (_) => {
+        'taskName': newNameFr,
+        'taskNameFr': newNameFr,
+        'taskNameEn': newNameEn,
+      });
     } catch (e) {
-      throw Exception('Failed to rename task logs: ${e.toString()}');
+      throw Exception(S.errorRenameTaskLogs(e.toString()));
     }
   }
 
   /// Updates performedByName in all task logs for a given user in a household
-  /// Processes in batches of 500 (Firestore batch limit)
   Future<void> updatePerformedByName(
     String householdId,
     String userId,
@@ -232,25 +236,11 @@ class TaskRepository {
           .where('performedBy', isEqualTo: userId)
           .get();
 
-      if (snapshot.docs.isEmpty) return;
-
-      final chunks = <List<QueryDocumentSnapshot<Map<String, dynamic>>>>[];
-      for (var i = 0; i < snapshot.docs.length; i += 500) {
-        chunks.add(snapshot.docs.sublist(
-          i,
-          i + 500 > snapshot.docs.length ? snapshot.docs.length : i + 500,
-        ));
-      }
-
-      for (final chunk in chunks) {
-        final batch = _firestore.batch();
-        for (final doc in chunk) {
-          batch.update(doc.reference, {'performedByName': newDisplayName});
-        }
-        await batch.commit();
-      }
+      await _batchUpdate(snapshot, (_) => {
+        'performedByName': newDisplayName,
+      });
     } catch (e) {
-      throw Exception('Failed to update performedByName: ${e.toString()}');
+      throw Exception(S.errorUpdatePerformedByName(e.toString()));
     }
   }
 
@@ -261,7 +251,6 @@ class TaskRepository {
   }
 
   /// Migrates task logs category for a given French task name
-  /// Processes in batches of 500 (Firestore batch limit)
   Future<void> migrateTaskLogsCategory(
     String householdId,
     String taskNameFr, {
@@ -272,26 +261,11 @@ class TaskRepository {
           .where('taskNameFr', isEqualTo: taskNameFr)
           .get();
 
-      if (snapshot.docs.isEmpty) return;
-
-      // Process in chunks of 500
-      final chunks = <List<QueryDocumentSnapshot<Map<String, dynamic>>>>[];
-      for (var i = 0; i < snapshot.docs.length; i += 500) {
-        chunks.add(snapshot.docs.sublist(
-          i,
-          i + 500 > snapshot.docs.length ? snapshot.docs.length : i + 500,
-        ));
-      }
-
-      for (final chunk in chunks) {
-        final batch = _firestore.batch();
-        for (final doc in chunk) {
-          batch.update(doc.reference, {'category': targetCategoryId});
-        }
-        await batch.commit();
-      }
+      await _batchUpdate(snapshot, (_) => {
+        'category': targetCategoryId,
+      });
     } catch (e) {
-      throw Exception('Failed to migrate task logs category: ${e.toString()}');
+      throw Exception(S.errorMigrateTaskCategory(e.toString()));
     }
   }
 }

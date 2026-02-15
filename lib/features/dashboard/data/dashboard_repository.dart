@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dust_count/shared/models/task_log.dart';
 import 'package:dust_count/core/constants/app_constants.dart';
+import 'package:dust_count/core/extensions/date_extensions.dart';
 
 /// Entry in the leaderboard showing member statistics
 class LeaderboardEntry {
@@ -104,6 +105,7 @@ class DashboardRepository {
     return snapshot.docs
         .map((doc) => TaskLog.fromFirestore(
             doc as DocumentSnapshot<Map<String, dynamic>>))
+        .where((log) => !log.isPersonal)
         .toList();
   }
 
@@ -161,14 +163,14 @@ class DashboardRepository {
       // Create a map of date to total minutes for that day
       final Map<String, int> dailyTotals = {};
       for (final log in memberLogs) {
-        final dateKey = _formatDateKey(log.date);
+        final dateKey = log.date.toDateKey();
         dailyTotals[dateKey] = (dailyTotals[dateKey] ?? 0) + log.durationMinutes;
       }
 
       // Convert to cumulative totals
       DateTime currentDate = start;
       while (currentDate.isBefore(end.add(const Duration(days: 1)))) {
-        final dateKey = _formatDateKey(currentDate);
+        final dateKey = currentDate.toDateKey();
         cumulativeMinutes += dailyTotals[dateKey] ?? 0;
 
         // Only add data points where there's activity or cumulative value
@@ -290,8 +292,4 @@ class DashboardRepository {
     return entries;
   }
 
-  /// Format date as YYYY-MM-DD for consistent keys
-  String _formatDateKey(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-  }
 }

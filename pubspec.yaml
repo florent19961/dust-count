@@ -48,15 +48,15 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "asset/dust_count_square.jpg"
+  image_path: "asset/dust_count_icon.png"
   adaptive_icon_background: "#1A1A2E"
-  adaptive_icon_foreground: "asset/dust_count_square.jpg"
+  adaptive_icon_foreground: "asset/dust_count_logo.png"
 
 flutter_native_splash:
   color: "#1A1A2E"
-  image: "asset/dust_count_square.jpg"
+  image: "asset/dust_count_logo.png"
   android: true
   ios: false
   android_12:
     color: "#1A1A2E"
-    image: "asset/dust_count_square.jpg"
+    image: "asset/dust_count_logo.png"

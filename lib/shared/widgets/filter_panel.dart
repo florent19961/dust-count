@@ -28,9 +28,14 @@ class FilterPanel extends StatefulWidget {
   final List<PredefinedTask> predefinedTasks;
   final List<HouseholdMember> members;
 
+  // --- personal filter ---
+  /// Current personal filter index: 0 = all, 1 = household, 2 = personal
+  final int personalFilterIndex;
+
   // --- feature flags ---
   final bool showMemberFilter;
   final bool showTaskFilter;
+  final bool showPersonalFilter;
 
   // --- callbacks ---
   final ValueChanged<FilterPeriod> onPeriodChanged;
@@ -39,6 +44,7 @@ class FilterPanel extends StatefulWidget {
   final ValueChanged<TaskDifficulty?> onDifficultyChanged;
   final ValueChanged<String?> onTaskNameChanged;
   final ValueChanged<String?>? onMemberChanged;
+  final ValueChanged<int>? onPersonalFilterChanged;
   final VoidCallback onResetAdvanced;
 
   /// Called when the category filter should be auto-cleared (obsolete selection).
@@ -53,17 +59,20 @@ class FilterPanel extends StatefulWidget {
     this.difficulty,
     this.taskNameFr,
     this.performedBy,
+    this.personalFilterIndex = 0,
     required this.customCategories,
     required this.predefinedTasks,
     this.members = const [],
     this.showMemberFilter = false,
     this.showTaskFilter = false,
+    this.showPersonalFilter = false,
     required this.onPeriodChanged,
     required this.onCustomDatePicker,
     required this.onCategoryChanged,
     required this.onDifficultyChanged,
     required this.onTaskNameChanged,
     this.onMemberChanged,
+    this.onPersonalFilterChanged,
     required this.onResetAdvanced,
     this.onAutoClearCategory,
   });
@@ -126,6 +135,11 @@ class _FilterPanelState extends State<FilterPanel> {
               _buildSectionLabel(S.filterByMember, theme),
               const SizedBox(height: 8),
               _buildMemberChips(),
+            ],
+            // Personal/household scope filter (optional)
+            if (widget.showPersonalFilter) ...[
+              const SizedBox(height: 12),
+              _buildPersonalFilterChips(theme),
             ],
             // Advanced task filter (optional)
             if (widget.showTaskFilter && widget.predefinedTasks.isNotEmpty) ...[
@@ -211,23 +225,13 @@ class _FilterPanelState extends State<FilterPanel> {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: [
-        _buildDifficultyChip(
-          '😊',
-          TaskDifficulty.plaisir,
-          AppColors.difficultyPlaisir,
-        ),
-        _buildDifficultyChip(
-          '😐',
-          TaskDifficulty.reloo,
-          AppColors.difficultyRelou,
-        ),
-        _buildDifficultyChip(
-          '😩',
-          TaskDifficulty.infernal,
-          AppColors.difficultyInfernal,
-        ),
-      ],
+      children: TaskDifficulty.values.map((d) {
+        return _buildDifficultyChip(
+          AppConstants.difficultyEmojis[d]!,
+          d,
+          AppColors.getDifficultyColor(d),
+        );
+      }).toList(),
     );
   }
 
@@ -265,6 +269,22 @@ class _FilterPanelState extends State<FilterPanel> {
           ),
         );
       }).toList(),
+    );
+  }
+
+  Widget _buildPersonalFilterChips(ThemeData theme) {
+    final labels = [S.filterAll, S.filterHousehold, S.filterPersonal];
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: List.generate(labels.length, (index) {
+        return ChoiceChip(
+          label: Text(labels[index]),
+          selected: widget.personalFilterIndex == index,
+          selectedColor: theme.colorScheme.primaryContainer,
+          onSelected: (_) => widget.onPersonalFilterChanged?.call(index),
+        );
+      }),
     );
   }
 

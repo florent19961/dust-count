@@ -275,6 +275,9 @@ abstract final class S {
       'Êtes-vous sûr de vouloir vous déconnecter ?';
   static const profileUpdated = 'Profil mis à jour avec succès';
 
+  // Members
+  static const unknownMember = 'Inconnu';
+
   // Common
   static const save = 'Enregistrer';
   static const cancel = 'Annuler';
@@ -341,6 +344,15 @@ abstract final class S {
   static const timerConfirmQuit = 'Quitter le chronomètre ?';
   static const timerConfirmQuitMessage =
       'Le temps chronométré sera perdu.';
+
+  // Personal task
+  static const personalTask = 'Tâche personnelle';
+  static const personalTaskDescription =
+      'Exclue des statistiques du foyer';
+  static const personalTaskBadge = 'Perso';
+  static const filterAll = 'Toutes';
+  static const filterHousehold = 'Foyer';
+  static const filterPersonal = 'Perso';
 
   // Edit task
   static const editTask = 'Modifier la tâche';
@@ -488,4 +500,82 @@ abstract final class S {
   static const categoryBreakdown = 'Répartition par catégorie';
   static const viewMinutes = 'Minutes';
   static const viewTaskCount = 'Nombre';
+
+  // Repository errors — User
+  static String errorCreateUser(String e) =>
+      'Échec de création utilisateur : $e';
+  static String errorGetUser(String e) =>
+      'Échec de récupération utilisateur : $e';
+  static String errorUpdateUser(String e) =>
+      'Échec de mise à jour utilisateur : $e';
+  static String errorWatchUser(String e) =>
+      "Échec d'écoute utilisateur : $e";
+  static String errorAddHouseholdToUser(String e) =>
+      "Échec d'ajout du foyer à l'utilisateur : $e";
+  static String errorRemoveHouseholdFromUser(String e) =>
+      "Échec de retrait du foyer de l'utilisateur : $e";
+  static String errorUpdateUserDisplayName(String e) =>
+      "Échec de mise à jour du nom d'affichage : $e";
+  static String errorUpdateLocale(String e) =>
+      'Échec de mise à jour de la langue : $e';
+
+  // Repository errors — Task
+  static String errorAddTaskLog(String e) =>
+      "Échec d'ajout de la tâche : $e";
+  static String errorUpdateTaskLog(String e) =>
+      'Échec de mise à jour de la tâche : $e';
+  static String errorDeleteTaskLog(String e) =>
+      'Échec de suppression de la tâche : $e';
+  static String errorWatchTaskLogs(String e) =>
+      "Échec d'écoute des tâches : $e";
+  static String errorGetTaskLogs(String e) =>
+      'Échec de récupération des tâches : $e';
+  static String errorCountTaskLogs(String e) =>
+      'Échec de comptage des tâches : $e';
+  static String errorCheckUserTasks(String e) =>
+      'Échec de vérification des tâches : $e';
+  static String errorRenameTaskLogs(String e) =>
+      'Échec de renommage des tâches : $e';
+  static String errorUpdatePerformedByName(String e) =>
+      "Échec de mise à jour du nom de l'exécutant : $e";
+  static String errorMigrateTaskCategory(String e) =>
+      'Échec de migration de catégorie : $e';
+
+  // Repository errors — Household
+  static String errorCreateHousehold(String e) =>
+      'Échec de création du foyer : $e';
+  static String errorGetHousehold(String e) =>
+      'Échec de récupération du foyer : $e';
+  static String errorWatchHousehold(String e) =>
+      "Échec d'écoute du foyer : $e";
+  static String errorWatchUserHouseholds(String e) =>
+      "Échec d'écoute des foyers : $e";
+  static String errorFindByInviteCode(String e) =>
+      "Échec de recherche par code d'invitation : $e";
+  static String errorAddMember(String e) =>
+      "Échec d'ajout du membre : $e";
+  static String errorRemoveMember(String e) =>
+      'Échec de retrait du membre : $e';
+  static String errorUpdatePredefinedTasks(String e) =>
+      'Échec de mise à jour des tâches prédéfinies : $e';
+  static String errorUpdateHouseholdName(String e) =>
+      'Échec de mise à jour du nom du foyer : $e';
+  static String errorUpdateMemberName(String e) =>
+      'Échec de mise à jour du nom du membre : $e';
+  static const cannotDeleteHouseholdWithMembers =
+      'Impossible de supprimer un foyer avec des membres';
+  static String errorDeleteHousehold(String e) =>
+      'Échec de suppression du foyer : $e';
+  static String errorAddPredefinedTask(String e) =>
+      "Échec d'ajout de la tâche prédéfinie : $e";
+  static String errorRemovePredefinedTask(String e) =>
+      'Échec de suppression de la tâche prédéfinie : $e';
+  static String errorUpdatePredefinedTask(String e) =>
+      'Échec de mise à jour de la tâche prédéfinie : $e';
+  static String errorUpdateQuickTaskIds(String e) =>
+      'Échec de mise à jour des tâches favorites : $e';
+  static String errorRemoveCustomCategory(String e) =>
+      'Échec de suppression de la catégorie : $e';
+  static String errorAddCustomCategory(String e) =>
+      "Échec d'ajout de la catégorie : $e";
 }

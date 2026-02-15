@@ -8,7 +8,16 @@ import 'package:dust_count/features/tasks/data/task_repository.dart';
 import 'package:dust_count/features/auth/domain/auth_providers.dart';
 import 'package:dust_count/features/household/domain/household_providers.dart';
 
-/// Task filter state
+/// Personal task filter scope
+enum PersonalFilter {
+  /// Show all tasks (personal + household)
+  all,
+  /// Show only household tasks (exclude personal)
+  householdOnly,
+  /// Show only personal tasks
+  personalOnly,
+}
+
 class TaskFilter {
   final DateTime? startDate;
   final DateTime? endDate;
@@ -17,6 +26,7 @@ class TaskFilter {
   final String? performedBy;
   final String? taskNameFr;
   final TaskDifficulty? difficulty;
+  final PersonalFilter personalFilter;
 
   const TaskFilter({
     this.startDate,
@@ -26,6 +36,7 @@ class TaskFilter {
     this.performedBy,
     this.taskNameFr,
     this.difficulty,
+    this.personalFilter = PersonalFilter.all,
   });
 
   TaskFilter copyWith({
@@ -36,6 +47,7 @@ class TaskFilter {
     String? performedBy,
     String? taskNameFr,
     TaskDifficulty? difficulty,
+    PersonalFilter? personalFilter,
     bool clearCategory = false,
     bool clearDates = false,
     bool clearPerformedBy = false,
@@ -50,6 +62,7 @@ class TaskFilter {
       performedBy: clearPerformedBy ? null : (performedBy ?? this.performedBy),
       taskNameFr: clearTaskNameFr ? null : (taskNameFr ?? this.taskNameFr),
       difficulty: clearDifficulty ? null : (difficulty ?? this.difficulty),
+      personalFilter: personalFilter ?? this.personalFilter,
     );
   }
 
@@ -64,11 +77,12 @@ class TaskFilter {
           period == other.period &&
           performedBy == other.performedBy &&
           taskNameFr == other.taskNameFr &&
-          difficulty == other.difficulty;
+          difficulty == other.difficulty &&
+          personalFilter == other.personalFilter;
 
   @override
   int get hashCode =>
-      Object.hash(startDate, endDate, categoryId, period, performedBy, taskNameFr, difficulty);
+      Object.hash(startDate, endDate, categoryId, period, performedBy, taskNameFr, difficulty, personalFilter);
 }
 
 /// Provider for task filter state
@@ -95,6 +109,8 @@ final filteredTaskLogsProvider = StreamProvider<List<TaskLog>>((ref) {
   final filter = ref.watch(taskFilterProvider);
   final taskRepository = ref.watch(taskRepositoryProvider);
 
+  final personalFilter = filter.personalFilter;
+
   return retryStreamOnPermissionDenied(
     () => taskRepository.watchTaskLogs(
       householdId,
@@ -105,7 +121,16 @@ final filteredTaskLogsProvider = StreamProvider<List<TaskLog>>((ref) {
       taskNameFr: filter.taskNameFr,
       difficulty: filter.difficulty,
     ),
-  );
+  ).map((logs) {
+    switch (personalFilter) {
+      case PersonalFilter.all:
+        return logs;
+      case PersonalFilter.householdOnly:
+        return logs.where((log) => !log.isPersonal).toList();
+      case PersonalFilter.personalOnly:
+        return logs.where((log) => log.isPersonal).toList();
+    }
+  });
 });
 
 /// Provider for task controller
@@ -131,6 +156,7 @@ class TaskController extends StateNotifier<AsyncValue<void>> {
     required TaskDifficulty difficulty,
     DateTime? date,
     String? comment,
+    bool isPersonal = false,
   }) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
@@ -153,6 +179,7 @@ class TaskController extends StateNotifier<AsyncValue<void>> {
         durationMinutes: durationMinutes,
         difficulty: difficulty,
         comment: comment,
+        isPersonal: isPersonal,
         createdAt: DateTime.now(),
       );
 

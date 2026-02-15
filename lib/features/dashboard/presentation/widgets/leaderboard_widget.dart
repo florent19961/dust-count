@@ -5,6 +5,7 @@ import 'package:dust_count/shared/models/household.dart';
 import 'package:dust_count/features/dashboard/data/dashboard_repository.dart';
 import 'package:dust_count/features/dashboard/presentation/widgets/member_avatar.dart';
 import 'package:dust_count/core/constants/app_constants.dart';
+import 'package:dust_count/shared/widgets/chart_empty_state.dart';
 
 /// Leaderboard widget showing ranked household members
 class LeaderboardWidget extends ConsumerWidget {
@@ -19,31 +20,8 @@ class LeaderboardWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-
     if (entries.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.leaderboard,
-                size: 64,
-                color: theme.colorScheme.onSurface.withOpacity(0.3),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                S.noDataAvailable,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      return const ChartEmptyState(icon: Icons.leaderboard);
     }
 
     return Column(
@@ -190,27 +168,13 @@ class _LeaderboardRow extends StatelessWidget {
       spacing: 8,
       runSpacing: 4,
       children: [
-        if (breakdown[TaskDifficulty.plaisir] != null &&
-            breakdown[TaskDifficulty.plaisir]! > 0)
-          _buildDifficultyChip(
-            '😊',
-            breakdown[TaskDifficulty.plaisir]!,
-            theme,
-          ),
-        if (breakdown[TaskDifficulty.reloo] != null &&
-            breakdown[TaskDifficulty.reloo]! > 0)
-          _buildDifficultyChip(
-            '😐',
-            breakdown[TaskDifficulty.reloo]!,
-            theme,
-          ),
-        if (breakdown[TaskDifficulty.infernal] != null &&
-            breakdown[TaskDifficulty.infernal]! > 0)
-          _buildDifficultyChip(
-            '😩',
-            breakdown[TaskDifficulty.infernal]!,
-            theme,
-          ),
+        for (final d in TaskDifficulty.values)
+          if ((breakdown[d] ?? 0) > 0)
+            _buildDifficultyChip(
+              AppConstants.difficultyEmojis[d]!,
+              breakdown[d]!,
+              theme,
+            ),
       ],
     );
   }

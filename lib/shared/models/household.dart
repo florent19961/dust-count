@@ -80,15 +80,15 @@ class PredefinedTask {
 
   /// Create PredefinedTask from map
   factory PredefinedTask.fromMap(Map<String, dynamic> map) {
-    final nameFr = map['nameFr'] as String;
     return PredefinedTask(
-      id: map['id'] as String,
-      nameFr: nameFr,
-      nameEn: map['nameEn'] as String,
-      categoryId: migrateCategory(map['category'] as String),
-      defaultDurationMinutes: map['defaultDurationMinutes'] as int,
+      id: (map['id'] as String?) ?? '',
+      nameFr: (map['nameFr'] as String?) ?? '',
+      nameEn: (map['nameEn'] as String?) ?? '',
+      categoryId: migrateCategory((map['category'] as String?) ?? 'divers'),
+      defaultDurationMinutes: (map['defaultDurationMinutes'] as int?) ?? 15,
       defaultDifficulty: TaskDifficulty.values.firstWhere(
-        (e) => e.name == map['defaultDifficulty'] as String,
+        (e) => e.name == (map['defaultDifficulty'] as String?),
+        orElse: () => TaskDifficulty.plaisir,
       ),
     );
   }

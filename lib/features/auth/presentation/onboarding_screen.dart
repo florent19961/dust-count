@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:dust_count/shared/strings.dart';
+import 'package:dust_count/core/constants/app_constants.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dust_count/app/router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -22,9 +24,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Future<void> _completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('onboarding_seen', true);
+    await prefs.setBool(AppConstants.onboardingSeenKey, true);
     if (!mounted) return;
-    context.go('/register');
+    context.go(AppRoutes.register);
   }
 
   Future<void> _skipOnboarding() async {

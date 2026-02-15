@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dust_count/app/router.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -221,7 +222,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       onPressed: isLoading
                           ? null
                           : () {
-                              context.go('/login');
+                              context.go(AppRoutes.login);
                             },
                       child: Text(S.signIn),
                     ),

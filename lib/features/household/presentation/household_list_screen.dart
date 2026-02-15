@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dust_count/app/router.dart';
 import 'package:dust_count/shared/strings.dart';
 import '../domain/household_providers.dart';
 import 'widgets/household_card.dart';
@@ -19,7 +20,7 @@ class HouseholdListScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.person_outline),
-            onPressed: () => context.push('/profile'),
+            onPressed: () => context.push(AppRoutes.profile),
             tooltip: S.profile,
           ),
         ],
@@ -47,7 +48,7 @@ class HouseholdListScreen extends ConsumerWidget {
                       // Set as current household and navigate
                       ref.read(currentHouseholdIdProvider.notifier).state =
                           household.id;
-                      context.push('/household/${household.id}');
+                      context.push(AppRoutes.household(household.id));
                     },
                   ),
                 );
@@ -90,14 +91,14 @@ class HouseholdListScreen extends ConsumerWidget {
             children: [
               FloatingActionButton.extended(
                 heroTag: 'create',
-                onPressed: () => context.push('/households/create'),
+                onPressed: () => context.push(AppRoutes.createHousehold),
                 icon: const Icon(Icons.add),
                 label: Text(S.createHousehold),
               ),
               const SizedBox(height: 12),
               FloatingActionButton.extended(
                 heroTag: 'join',
-                onPressed: () => context.push('/households/join'),
+                onPressed: () => context.push(AppRoutes.joinHousehold),
                 icon: const Icon(Icons.group_add),
                 label: Text(S.joinHousehold),
               ),
@@ -140,13 +141,13 @@ class HouseholdListScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 32),
             FilledButton.icon(
-              onPressed: () => context.push('/households/create'),
+              onPressed: () => context.push(AppRoutes.createHousehold),
               icon: const Icon(Icons.add),
               label: Text(S.createYourFirstHousehold),
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
-              onPressed: () => context.push('/households/join'),
+              onPressed: () => context.push(AppRoutes.joinHousehold),
               icon: const Icon(Icons.group_add),
               label: Text(S.orJoinExisting),
             ),

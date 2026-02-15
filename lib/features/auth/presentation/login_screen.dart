@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dust_count/app/router.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -137,7 +138,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     onPressed: isLoading
                         ? null
                         : () {
-                            context.push('/forgot-password');
+                            context.push(AppRoutes.forgotPassword);
                           },
                     child: Text(S.forgotPassword),
                   ),
@@ -177,7 +178,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       onPressed: isLoading
                           ? null
                           : () {
-                              context.push('/register');
+                              context.push(AppRoutes.register);
                             },
                       child: Text(S.signUp),
                     ),

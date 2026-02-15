@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dust_count/app/router.dart';
 import 'package:dust_count/shared/models/task_log.dart';
 import 'package:dust_count/shared/models/household.dart';
 import 'package:dust_count/shared/widgets/difficulty_badge.dart';
 import 'package:dust_count/shared/widgets/category_chip.dart';
 import 'package:dust_count/shared/utils/category_helpers.dart';
 import 'package:dust_count/features/tasks/domain/task_providers.dart';
+import 'package:dust_count/features/dashboard/domain/dashboard_providers.dart';
 import 'package:dust_count/shared/utils/string_helpers.dart';
 import 'package:dust_count/shared/utils/member_helpers.dart' as member_helpers;
 
@@ -76,6 +78,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
       state.when(
         data: (_) {
           if (mounted) {
+            invalidateDashboardProviders(ref);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(S.taskDeletedSuccess),
@@ -103,7 +106,7 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
   void _navigateToEdit() {
     context
         .push(
-          '/household/${widget.household.id}/task/${_taskLog.id}/edit',
+          AppRoutes.taskEdit(widget.household.id, _taskLog.id),
           extra: {'task': _taskLog, 'household': widget.household},
         )
         .then((result) {
@@ -144,6 +147,40 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
+
+            // Personal task badge
+            if (_taskLog.isPersonal) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.person_outline,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      S.personalTask,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             const SizedBox(height: 24),
 

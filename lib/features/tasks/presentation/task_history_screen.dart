@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dust_count/app/router.dart';
 import 'package:dust_count/shared/models/task_log.dart';
 import 'package:dust_count/shared/models/household.dart';
 import 'package:dust_count/features/tasks/domain/task_providers.dart';
@@ -118,7 +119,7 @@ class TaskHistoryScreen extends ConsumerWidget {
                               household: household,
                               onTap: () {
                                 context.push(
-                                  '/household/${household.id}/task/${task.id}',
+                                  AppRoutes.taskDetail(household.id, task.id),
                                   extra: {
                                     'task': task,
                                     'household': household,

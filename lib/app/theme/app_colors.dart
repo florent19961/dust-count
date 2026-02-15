@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dust_count/core/constants/app_constants.dart';
 
 /// Color palette for DustCount app
 /// Provides a comprehensive color system for light and dark themes
@@ -37,16 +38,14 @@ class AppColors {
   static const Color difficultyInfernal = Color(0xFFD4726A); // Hard - Red
 
   /// Get difficulty color by difficulty level
-  static Color getDifficultyColor(String difficulty) {
-    switch (difficulty.toLowerCase()) {
-      case 'plaisir':
+  static Color getDifficultyColor(TaskDifficulty difficulty) {
+    switch (difficulty) {
+      case TaskDifficulty.plaisir:
         return difficultyPlaisir;
-      case 'relou':
+      case TaskDifficulty.reloo:
         return difficultyRelou;
-      case 'infernal':
+      case TaskDifficulty.infernal:
         return difficultyInfernal;
-      default:
-        return textSecondary;
     }
   }
 
@@ -96,37 +95,6 @@ class AppColors {
   }
 
   // Color Schemes
-  static const ColorScheme lightColorScheme = ColorScheme(
-    brightness: Brightness.light,
-    primary: primary,
-    onPrimary: surfaceLight,
-    primaryContainer: Color(0xFFE8F0E3),
-    onPrimaryContainer: Color(0xFF1A3A11),
-    secondary: secondary,
-    onSecondary: textPrimaryLight,
-    secondaryContainer: Color(0xFFF0EDE6),
-    onSecondaryContainer: Color(0xFF3A3730),
-    tertiary: accent,
-    onTertiary: surfaceLight,
-    tertiaryContainer: Color(0xFFE3F0ED),
-    onTertiaryContainer: Color(0xFF143A32),
-    error: error,
-    onError: surfaceLight,
-    errorContainer: Color(0xFFF9DEDB),
-    onErrorContainer: Color(0xFF410002),
-    surface: surfaceLight,
-    onSurface: textPrimaryLight,
-    surfaceContainerHighest: backgroundLight,
-    onSurfaceVariant: textSecondary,
-    outline: Color(0xFFCAC4D0),
-    outlineVariant: Color(0xFFE7E0EC),
-    shadow: Color(0x33000000),
-    scrim: Color(0x99000000),
-    inverseSurface: textPrimaryLight,
-    onInverseSurface: surfaceLight,
-    inversePrimary: Color(0xFFB3D0A5),
-  );
-
   static const ColorScheme darkColorScheme = ColorScheme(
     brightness: Brightness.dark,
     primary: Color(0xFFB3D0A5),
@@ -175,12 +143,6 @@ class AppColors {
   // Gradient definitions
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [primary, accent],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-
-  static const LinearGradient cardGradientLight = LinearGradient(
-    colors: [surfaceLight, backgroundLight],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

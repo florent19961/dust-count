@@ -1,7 +1,9 @@
 import 'package:dust_count/features/auth/domain/auth_providers.dart';
+import 'package:dust_count/core/constants/app_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dust_count/app/router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -49,20 +51,20 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     authState.when(
       data: (user) async {
         if (user != null) {
-          context.go('/households');
+          context.go(AppRoutes.households);
         } else {
           final prefs = await SharedPreferences.getInstance();
           if (!mounted) return;
-          final onboardingSeen = prefs.getBool('onboarding_seen') ?? false;
-          context.go(onboardingSeen ? '/login' : '/onboarding');
+          final onboardingSeen = prefs.getBool(AppConstants.onboardingSeenKey) ?? false;
+          context.go(onboardingSeen ? AppRoutes.login : AppRoutes.onboarding);
         }
       },
-      loading: () => context.go('/login'),
+      loading: () => context.go(AppRoutes.login),
       error: (_, __) async {
         final prefs = await SharedPreferences.getInstance();
         if (!mounted) return;
-        final onboardingSeen = prefs.getBool('onboarding_seen') ?? false;
-        context.go(onboardingSeen ? '/login' : '/onboarding');
+        final onboardingSeen = prefs.getBool(AppConstants.onboardingSeenKey) ?? false;
+        context.go(onboardingSeen ? AppRoutes.login : AppRoutes.onboarding);
       },
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dust_count/app/router.dart';
 import 'package:uuid/uuid.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:dust_count/shared/models/household.dart';
@@ -11,6 +12,7 @@ import 'package:dust_count/core/constants/app_constants.dart';
 import 'package:dust_count/features/household/domain/household_providers.dart';
 import 'package:dust_count/features/household/presentation/widgets/task_form_sheet.dart';
 import 'package:dust_count/features/household/presentation/widgets/add_category_sheet.dart';
+import 'package:dust_count/shared/widgets/drag_delete_zone.dart';
 
 /// Screen for creating a new household with a 2-step flow.
 class CreateHouseholdScreen extends ConsumerStatefulWidget {
@@ -111,9 +113,9 @@ class _CreateHouseholdScreenState
               .updateQuickTaskIds(currentHouseholdId, _quickTaskIds);
         }
         if (!mounted) return;
-        context.go('/household/$currentHouseholdId');
+        context.go(AppRoutes.household(currentHouseholdId));
       } else {
-        context.go('/households');
+        context.go(AppRoutes.households);
       }
     } catch (e) {
       if (!mounted) return;
@@ -393,20 +395,7 @@ class _CreateHouseholdScreenState
       grouped.putIfAbsent(cat.id, () => []);
     }
 
-    // Sort: built-in first (in order), then custom
-    final categoryIds = grouped.keys.toList()
-      ..sort((a, b) {
-        final aBuiltIn = builtInCategories.any((c) => c.id == a);
-        final bBuiltIn = builtInCategories.any((c) => c.id == b);
-        if (aBuiltIn && !bBuiltIn) return -1;
-        if (!aBuiltIn && bBuiltIn) return 1;
-        if (aBuiltIn && bBuiltIn) {
-          final aIdx = builtInCategories.indexWhere((c) => c.id == a);
-          final bIdx = builtInCategories.indexWhere((c) => c.id == b);
-          return aIdx.compareTo(bIdx);
-        }
-        return a.compareTo(b);
-      });
+    final categoryIds = sortCategoryIds(grouped.keys);
 
     return Column(
       children: [
@@ -468,7 +457,7 @@ class _CreateHouseholdScreenState
                   }).toList(),
                 ),
               ),
-              if (_isDragging) _buildTrashZone(),
+              if (_isDragging) DragDeleteZone(onDelete: _confirmDeleteTask),
             ],
           ),
         ),
@@ -622,52 +611,6 @@ class _CreateHouseholdScreenState
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(S.categoryChanged)),
-    );
-  }
-
-  Widget _buildTrashZone() {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: DragTarget<PredefinedTask>(
-        onWillAcceptWithDetails: (_) => true,
-        onAcceptWithDetails: (details) => _confirmDeleteTask(details.data),
-        builder: (context, candidateData, rejectedData) {
-          final isHovered = candidateData.isNotEmpty;
-          final theme = Theme.of(context);
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            height: 72,
-            decoration: BoxDecoration(
-              color: isHovered
-                  ? theme.colorScheme.error
-                  : theme.colorScheme.errorContainer,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  isHovered ? Icons.delete_forever : Icons.delete_outline,
-                  color: isHovered
-                      ? theme.colorScheme.onError
-                      : theme.colorScheme.onErrorContainer,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  S.dropToDelete,
-                  style: TextStyle(
-                    color: isHovered
-                        ? theme.colorScheme.onError
-                        : theme.colorScheme.onErrorContainer,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
     );
   }
 

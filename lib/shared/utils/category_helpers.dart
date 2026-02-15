@@ -153,6 +153,31 @@ String? getCategoryEmoji(String id, List<HouseholdCategory> custom) {
   return (cat != null && cat.hasEmoji) ? cat.emoji : null;
 }
 
+/// Sorts category IDs: built-in first (in canonical order), then custom alphabetically.
+/// When [includeArchived] is true, the archived category appears last.
+List<String> sortCategoryIds(Iterable<String> ids, {bool includeArchived = false}) {
+  final sorted = ids.toList()
+    ..sort((a, b) {
+      if (!includeArchived) {
+        // No special handling needed
+      } else {
+        if (a == AppConstants.archivedCategoryId) return 1;
+        if (b == AppConstants.archivedCategoryId) return -1;
+      }
+      final aBuiltIn = builtInCategories.any((c) => c.id == a);
+      final bBuiltIn = builtInCategories.any((c) => c.id == b);
+      if (aBuiltIn && !bBuiltIn) return -1;
+      if (!aBuiltIn && bBuiltIn) return 1;
+      if (aBuiltIn && bBuiltIn) {
+        final aIdx = builtInCategories.indexWhere((c) => c.id == a);
+        final bIdx = builtInCategories.indexWhere((c) => c.id == b);
+        return aIdx.compareTo(bIdx);
+      }
+      return a.compareTo(b);
+    });
+  return sorted;
+}
+
 /// Gets the color for a category ID.
 Color getCategoryColor(String id, List<HouseholdCategory> custom) {
   return findCategory(id, custom)?.color ?? AppColors.textSecondary;
