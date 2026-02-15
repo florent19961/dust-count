@@ -46,10 +46,14 @@ flutter:
 
 flutter_launcher_icons:
   android: true
-  ios: false
-  image_path: "asset/dust_count_icon.png"
+  ios: true
+  remove_alpha_ios: true
+  image_path: "asset/dust_count_icon_1024.png"
   adaptive_icon_background: "#1A1A2E"
   adaptive_icon_foreground: "asset/dust_count_logo.png"
+  web:
+    generate: true
+    image_path: "asset/dust_count_icon_1024.png"
 
 flutter_native_splash:
   color: "#1A1A2E"
