@@ -342,6 +342,20 @@ class HouseholdRepository {
     }
   }
 
+  /// Deletes member preferences subcollection document
+  Future<void> deleteMemberPreferences(String householdId, String userId) async {
+    try {
+      await _firestore
+          .collection(_collectionPath)
+          .doc(householdId)
+          .collection('memberPreferences')
+          .doc(userId)
+          .delete();
+    } catch (e) {
+      throw Exception(S.errorDeleteMemberPreferences(e.toString()));
+    }
+  }
+
   /// Removes a custom category from a household
   Future<void> removeCustomCategory(String householdId, String categoryId) async {
     try {

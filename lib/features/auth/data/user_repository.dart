@@ -84,6 +84,14 @@ class UserRepository {
     }
   }
 
+  Future<void> deleteUser(String userId) async {
+    try {
+      await _firestore.collection(_collectionPath).doc(userId).delete();
+    } catch (e) {
+      throw Exception(S.errorDeleteUser(e.toString()));
+    }
+  }
+
   Future<void> updateLocale(String userId, String locale) async {
     try {
       await _firestore.collection(_collectionPath).doc(userId).update({

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:dust_count/app/router.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:dust_count/shared/utils/string_helpers.dart';
@@ -79,6 +80,13 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 32),
+              ListTile(
+                leading: const Icon(Icons.privacy_tip_outlined),
+                title: Text(S.privacyPolicy),
+                trailing: const Icon(Icons.open_in_new, size: 18),
+                onTap: () => launchUrl(Uri.parse(S.privacyPolicyUrl)),
+              ),
+              const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -109,6 +117,20 @@ class ProfileScreen extends ConsumerWidget {
                   },
                   icon: const Icon(Icons.logout),
                   label: Text(S.logout),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.error,
+                    side: BorderSide(color: Theme.of(context).colorScheme.error),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _showDeleteAccountDialog(context, ref),
+                  icon: const Icon(Icons.delete_forever),
+                  label: Text(S.deleteAccount),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Theme.of(context).colorScheme.error,
                     side: BorderSide(color: Theme.of(context).colorScheme.error),
@@ -187,4 +209,75 @@ class ProfileScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _showDeleteAccountDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final passwordController = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(S.deleteAccountTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(S.deleteAccountWarning),
+            const SizedBox(height: 16),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: S.deleteAccountPasswordLabel,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(S.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (passwordController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(S.deleteAccountPasswordRequired)),
+                );
+                return;
+              }
+              Navigator.pop(context, true);
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: Text(S.delete),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final password = passwordController.text;
+    try {
+      await ref.read(authControllerProvider.notifier).deleteAccount(password);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(S.accountDeleted)),
+        );
+        context.go(AppRoutes.login);
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(S.errorDeletingAccount),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
 }

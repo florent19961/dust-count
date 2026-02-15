@@ -145,6 +145,38 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
     });
   }
 
+  Future<void> deleteAccount(String password) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final authRepository = ref.read(authRepositoryProvider);
+      final userRepository = ref.read(userRepositoryProvider);
+      final householdRepository = ref.read(householdRepositoryProvider);
+      final taskRepository = ref.read(taskRepositoryProvider);
+
+      final currentUserAsync = ref.read(currentUserProvider);
+      final user = currentUserAsync.value;
+      if (user == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // 1. Reauthenticate
+      await authRepository.reauthenticate(password);
+
+      // 2. For each household: anonymize logs, delete prefs, remove member
+      for (final householdId in user.householdIds) {
+        await taskRepository.anonymizeUserTaskLogs(householdId, user.userId);
+        await householdRepository.deleteMemberPreferences(householdId, user.userId);
+        await householdRepository.removeMember(householdId, user.userId);
+      }
+
+      // 3. Delete Firestore user document
+      await userRepository.deleteUser(user.userId);
+
+      // 4. Delete Firebase Auth user (last — irreversible)
+      await authRepository.deleteAuthUser();
+    });
+  }
+
   Future<void> resetPassword({required String email}) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {

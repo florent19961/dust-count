@@ -77,6 +77,36 @@ class AuthRepository {
     }
   }
 
+  Future<void> reauthenticate(String password) async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null || user.email == null) {
+        throw Exception('Aucun utilisateur connecté.');
+      }
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: password,
+      );
+      await user.reauthenticateWithCredential(credential);
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    } catch (e) {
+      throw Exception('Échec de la réauthentification : ${e.toString()}');
+    }
+  }
+
+  Future<void> deleteAuthUser() async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null) {
+        throw Exception('Aucun utilisateur connecté.');
+      }
+      await user.delete();
+    } catch (e) {
+      throw Exception('Échec de la suppression du compte : ${e.toString()}');
+    }
+  }
+
   String _handleAuthException(FirebaseAuthException e) {
     switch (e.code) {
       case 'weak-password':

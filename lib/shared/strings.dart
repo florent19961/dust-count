@@ -574,4 +574,29 @@ abstract final class S {
       'Échec de suppression de la catégorie : $e';
   static String errorAddCustomCategory(String e) =>
       "Échec d'ajout de la catégorie : $e";
+
+  // Delete account
+  static const deleteAccount = 'Supprimer mon compte';
+  static const deleteAccountTitle = 'Supprimer votre compte ?';
+  static const deleteAccountWarning =
+      'Cette action est irréversible. Toutes vos données personnelles seront supprimées et vos contributions seront anonymisées.';
+  static const deleteAccountPasswordLabel =
+      'Entrez votre mot de passe pour confirmer';
+  static const deleteAccountPasswordRequired =
+      'Le mot de passe est requis pour confirmer la suppression';
+  static const deletedMember = 'Membre supprimé';
+  static const accountDeleted = 'Compte supprimé avec succès';
+  static const errorDeletingAccount =
+      'Erreur lors de la suppression du compte';
+  static String errorDeleteUser(String e) =>
+      'Échec de suppression utilisateur : $e';
+  static String errorAnonymizeTaskLogs(String e) =>
+      'Échec d\'anonymisation des tâches : $e';
+  static String errorDeleteMemberPreferences(String e) =>
+      'Échec de suppression des préférences : $e';
+
+  // Privacy policy
+  static const privacyPolicy = 'Politique de confidentialité';
+  static const privacyPolicyUrl =
+      'https://florent19961.github.io/dust-count/';
 }

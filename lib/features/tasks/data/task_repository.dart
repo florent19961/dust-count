@@ -203,6 +203,22 @@ class TaskRepository {
     }
   }
 
+  /// Anonymizes all task logs for a deleted user
+  Future<void> anonymizeUserTaskLogs(String householdId, String userId) async {
+    try {
+      final snapshot = await _taskLogsRef(householdId)
+          .where('performedBy', isEqualTo: userId)
+          .get();
+
+      await _batchUpdate(snapshot, (_) => {
+        'performedBy': null,
+        'performedByName': S.deletedMember,
+      });
+    } catch (e) {
+      throw Exception(S.errorAnonymizeTaskLogs(e.toString()));
+    }
+  }
+
   /// Renames task logs matching a given French task name
   Future<void> renameTaskLogs(
     String householdId,
