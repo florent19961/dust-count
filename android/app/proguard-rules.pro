@@ -12,6 +12,11 @@
 -dontwarn com.google.firebase.**
 -dontwarn com.google.android.gms.**
 
+## Play Core (referenced by Flutter engine for deferred components, not used)
+-dontwarn com.google.android.play.core.splitcompat.**
+-dontwarn com.google.android.play.core.splitinstall.**
+-dontwarn com.google.android.play.core.tasks.**
+
 ## Gson (used by Firebase)
 -keepattributes Signature
 -keepattributes *Annotation*
