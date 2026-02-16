@@ -46,3 +46,7 @@ app.*.map.json
 android/key.properties
 *.jks
 *.keystore
+
+# Firebase config (sensitive)
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
