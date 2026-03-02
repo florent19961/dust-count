@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dust_count/app/router.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:dust_count/shared/models/household.dart';
+import 'package:dust_count/core/constants/app_constants.dart';
 import 'package:dust_count/features/tasks/presentation/task_history_screen.dart';
 import 'package:dust_count/features/tasks/presentation/task_form_screen.dart';
 import 'package:dust_count/features/dashboard/presentation/dashboard_screen.dart';
@@ -99,6 +101,9 @@ class _HouseholdHomeScreenState extends ConsumerState<HouseholdHomeScreen> {
                               Navigator.pop(sheetContext);
                               if (h.id != widget.householdId) {
                                 ref.read(currentHouseholdIdProvider.notifier).state = h.id;
+                                SharedPreferences.getInstance().then((prefs) {
+                                  prefs.setString(AppConstants.lastHouseholdIdKey, h.id);
+                                });
                                 context.go(AppRoutes.household(h.id));
                               }
                             },
@@ -306,6 +311,7 @@ class _HouseholdHomeScreenState extends ConsumerState<HouseholdHomeScreen> {
             ref.invalidate(dailyCumulativeProvider);
             ref.invalidate(leaderboardProvider);
             ref.invalidate(categoryBreakdownProvider);
+            ref.invalidate(taskMemberMatrixProvider);
           }
         },
         destinations: [

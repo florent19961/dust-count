@@ -129,13 +129,13 @@ class PeriodFilter extends ConsumerWidget {
     DateTime? endDate;
 
     switch (period) {
-      case FilterPeriod.thisWeek:
-        startDate = now.startOfWeek;
-        endDate = now.endOfWeek;
+      case FilterPeriod.last7Days:
+        startDate = now.subtract(const Duration(days: 6)).startOfDay;
+        endDate = now.endOfDay;
         break;
-      case FilterPeriod.thisMonth:
-        startDate = now.startOfMonth;
-        endDate = now.endOfMonth;
+      case FilterPeriod.allTime:
+        startDate = DateTime(2020);
+        endDate = now.endOfDay;
         break;
       case FilterPeriod.custom:
         _showCustomDatePicker(ref, context);

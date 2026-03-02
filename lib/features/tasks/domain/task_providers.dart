@@ -32,7 +32,7 @@ class TaskFilter {
     this.startDate,
     this.endDate,
     this.categoryId,
-    this.period = FilterPeriod.thisWeek,
+    this.period = FilterPeriod.last7Days,
     this.performedBy,
     this.taskNameFr,
     this.difficulty,
@@ -89,9 +89,9 @@ class TaskFilter {
 final taskFilterProvider = StateProvider<TaskFilter>((ref) {
   final now = DateTime.now();
   return TaskFilter(
-    startDate: now.startOfWeek,
-    endDate: now.endOfWeek,
-    period: FilterPeriod.thisWeek,
+    startDate: now.subtract(const Duration(days: 6)).startOfDay,
+    endDate: now.endOfDay,
+    period: FilterPeriod.last7Days,
   );
 });
 
@@ -157,6 +157,8 @@ class TaskController extends StateNotifier<AsyncValue<void>> {
     DateTime? date,
     String? comment,
     bool isPersonal = false,
+    String? performedBy,
+    String? performedByName,
   }) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
@@ -173,8 +175,8 @@ class TaskController extends StateNotifier<AsyncValue<void>> {
         taskNameFr: taskNameFr,
         taskNameEn: taskNameEn,
         categoryId: categoryId,
-        performedBy: currentUser.userId,
-        performedByName: currentUser.displayName,
+        performedBy: performedBy ?? currentUser.userId,
+        performedByName: performedByName ?? currentUser.displayName,
         date: date ?? DateTime.now(),
         durationMinutes: durationMinutes,
         difficulty: difficulty,

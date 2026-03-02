@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dust_count/app/router.dart';
 import 'package:dust_count/shared/strings.dart';
 import 'package:dust_count/shared/models/household.dart';
+import 'package:dust_count/core/constants/app_constants.dart';
 import 'package:dust_count/features/household/domain/household_providers.dart';
 import 'package:dust_count/shared/utils/string_helpers.dart';
 
@@ -460,6 +462,12 @@ class HouseholdSettingsScreen extends ConsumerWidget {
         await ref
             .read(householdControllerProvider.notifier)
             .leaveHousehold(householdId);
+
+        // Clear last household if it matches
+        final prefs = await SharedPreferences.getInstance();
+        if (prefs.getString(AppConstants.lastHouseholdIdKey) == householdId) {
+          await prefs.remove(AppConstants.lastHouseholdIdKey);
+        }
 
         if (context.mounted) {
           context.go(AppRoutes.households);

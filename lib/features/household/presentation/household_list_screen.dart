@@ -1,18 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dust_count/app/router.dart';
 import 'package:dust_count/shared/strings.dart';
-import '../domain/household_providers.dart';
-import 'widgets/household_card.dart';
+import 'package:dust_count/core/constants/app_constants.dart';
+import 'package:dust_count/features/household/domain/household_providers.dart';
+import 'package:dust_count/features/household/presentation/widgets/household_card.dart';
 
 /// Main screen showing all households the user belongs to
-class HouseholdListScreen extends ConsumerWidget {
+class HouseholdListScreen extends ConsumerStatefulWidget {
   const HouseholdListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HouseholdListScreen> createState() =>
+      _HouseholdListScreenState();
+}
+
+class _HouseholdListScreenState extends ConsumerState<HouseholdListScreen> {
+  bool _autoRedirectAttempted = false;
+
+  @override
+  Widget build(BuildContext context) {
     final userHouseholdsAsync = ref.watch(userHouseholdsProvider);
+
+    // Auto-redirect to last household on first data load
+    if (!_autoRedirectAttempted) {
+      userHouseholdsAsync.whenData((households) {
+        if (!_autoRedirectAttempted && households.isNotEmpty) {
+          _autoRedirectAttempted = true;
+          _tryAutoRedirect(households);
+        }
+      });
+      if (userHouseholdsAsync.hasValue && userHouseholdsAsync.value!.isEmpty) {
+        _autoRedirectAttempted = true;
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -44,12 +67,7 @@ class HouseholdListScreen extends ConsumerWidget {
                   padding: const EdgeInsets.only(bottom: 16),
                   child: HouseholdCard(
                     household: household,
-                    onTap: () {
-                      // Set as current household and navigate
-                      ref.read(currentHouseholdIdProvider.notifier).state =
-                          household.id;
-                      context.push(AppRoutes.household(household.id));
-                    },
+                    onTap: () => _navigateToHousehold(household.id),
                   ),
                 );
               },
@@ -107,6 +125,28 @@ class HouseholdListScreen extends ConsumerWidget {
         },
       ),
     );
+  }
+
+  /// Try to auto-redirect to the last viewed household
+  Future<void> _tryAutoRedirect(List<dynamic> households) async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastId = prefs.getString(AppConstants.lastHouseholdIdKey);
+    if (lastId != null && mounted) {
+      final isMember = households.any((h) => h.id == lastId);
+      if (isMember) {
+        ref.read(currentHouseholdIdProvider.notifier).state = lastId;
+        context.push(AppRoutes.household(lastId));
+      }
+    }
+  }
+
+  /// Navigate to a household and persist the choice
+  void _navigateToHousehold(String householdId) {
+    ref.read(currentHouseholdIdProvider.notifier).state = householdId;
+    context.push(AppRoutes.household(householdId));
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString(AppConstants.lastHouseholdIdKey, householdId);
+    });
   }
 
   Widget _buildEmptyState(BuildContext context) {

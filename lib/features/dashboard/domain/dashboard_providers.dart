@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dust_count/shared/models/filter_period.dart';
 import 'package:dust_count/core/constants/app_constants.dart';
+import 'package:dust_count/core/extensions/date_extensions.dart';
 import 'package:dust_count/core/utils/firestore_retry.dart';
 import 'package:dust_count/features/dashboard/data/dashboard_repository.dart';
 import 'package:dust_count/features/household/domain/household_providers.dart';
@@ -30,14 +31,10 @@ class DashboardFilter {
   /// Get the effective start date based on period
   DateTime get effectiveStartDate {
     switch (period) {
-      case FilterPeriod.thisWeek:
-        final now = DateTime.now();
-        final weekday = now.weekday;
-        return DateTime(now.year, now.month, now.day)
-            .subtract(Duration(days: weekday - 1));
-      case FilterPeriod.thisMonth:
-        final now = DateTime.now();
-        return DateTime(now.year, now.month, 1);
+      case FilterPeriod.last7Days:
+        return DateTime.now().subtract(const Duration(days: 6)).startOfDay;
+      case FilterPeriod.allTime:
+        return DateTime(2020);
       case FilterPeriod.custom:
         return startDate ?? _defaultStartDate;
     }
@@ -46,9 +43,9 @@ class DashboardFilter {
   /// Get the effective end date based on period
   DateTime get effectiveEndDate {
     switch (period) {
-      case FilterPeriod.thisWeek:
+      case FilterPeriod.last7Days:
         return DateTime.now();
-      case FilterPeriod.thisMonth:
+      case FilterPeriod.allTime:
         return DateTime.now();
       case FilterPeriod.custom:
         return endDate ?? DateTime.now();
@@ -114,6 +111,7 @@ void invalidateDashboardProviders(WidgetRef ref) {
   ref.invalidate(dailyCumulativeProvider);
   ref.invalidate(leaderboardProvider);
   ref.invalidate(categoryBreakdownProvider);
+  ref.invalidate(taskMemberMatrixProvider);
 }
 
 /// Provider for dashboard repository
@@ -124,7 +122,7 @@ final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
 /// Provider for dashboard filter state
 final dashboardFilterProvider =
     StateProvider<DashboardFilter>((ref) {
-  return const DashboardFilter(period: FilterPeriod.thisWeek);
+  return const DashboardFilter(period: FilterPeriod.last7Days);
 });
 
 /// Provider for total minutes per member
@@ -208,6 +206,29 @@ final leaderboardProvider =
   final repository = ref.watch(dashboardRepositoryProvider);
 
   return retryOnPermissionDenied(() => repository.getLeaderboard(
+    householdId,
+    filter.effectiveStartDate,
+    filter.effectiveEndDate,
+    categoryId: filter.categoryId,
+    taskNameFr: filter.taskNameFr,
+    difficulty: filter.difficulty,
+    performedBy: filter.performedBy,
+    personalFilterIndex: filter.personalFilterIndex,
+  ));
+});
+
+/// Provider for task×member matrix data
+final taskMemberMatrixProvider =
+    FutureProvider<List<TaskMemberMatrixEntry>>((ref) async {
+  final householdId = ref.watch(currentHouseholdIdProvider);
+  if (householdId == null) {
+    return [];
+  }
+
+  final filter = ref.watch(dashboardFilterProvider);
+  final repository = ref.watch(dashboardRepositoryProvider);
+
+  return retryOnPermissionDenied(() => repository.getTaskMemberMatrix(
     householdId,
     filter.effectiveStartDate,
     filter.effectiveEndDate,

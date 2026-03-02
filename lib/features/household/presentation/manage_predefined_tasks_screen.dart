@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dust_count/shared/strings.dart';
@@ -34,6 +35,52 @@ class _ManagePredefinedTasksScreenState
   bool _dirty = false;
   bool _isDragging = false;
   final Set<String> _expandedTaskIds = {};
+  final Set<String> _expandedCategories = {};
+
+  // Auto-scroll during drag
+  final ScrollController _scrollController = ScrollController();
+  Timer? _autoScrollTimer;
+
+  @override
+  void dispose() {
+    _autoScrollTimer?.cancel();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _handlePointerMove(PointerMoveEvent event) {
+    if (!_isDragging) return;
+    final renderBox = context.findRenderObject() as RenderBox;
+    final localY = event.localPosition.dy;
+    final height = renderBox.size.height;
+    const edgeZone = 80.0;
+    const maxSpeed = 10.0;
+
+    if (localY < edgeZone) {
+      final speed = maxSpeed * (1 - localY / edgeZone);
+      _startAutoScroll(-speed);
+    } else if (localY > height - edgeZone) {
+      final speed = maxSpeed * (1 - (height - localY) / edgeZone);
+      _startAutoScroll(speed);
+    } else {
+      _stopAutoScroll();
+    }
+  }
+
+  void _startAutoScroll(double speed) {
+    _autoScrollTimer?.cancel();
+    _autoScrollTimer = Timer.periodic(const Duration(milliseconds: 16), (_) {
+      final current = _scrollController.offset;
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final newOffset = (current + speed).clamp(0.0, maxScroll);
+      _scrollController.jumpTo(newOffset);
+    });
+  }
+
+  void _stopAutoScroll() {
+    _autoScrollTimer?.cancel();
+    _autoScrollTimer = null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +178,12 @@ class _ManagePredefinedTasksScreenState
               includeArchived: true,
             );
 
-            return SingleChildScrollView(
+            return Listener(
+              onPointerMove: _handlePointerMove,
+              onPointerUp: (_) => _stopAutoScroll(),
+              onPointerCancel: (_) => _stopAutoScroll(),
+              child: SingleChildScrollView(
+              controller: _scrollController,
               padding: EdgeInsets.only(bottom: _isDragging ? 88 : 16),
               child: Column(
                 children: categories.map((categoryId) {
@@ -147,6 +199,7 @@ class _ManagePredefinedTasksScreenState
                   );
                 }).toList(),
               ),
+            ),
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -241,7 +294,20 @@ class _ManagePredefinedTasksScreenState
     final emoji = getCategoryEmoji(categoryId, customCategories);
     final label = getCategoryLabel(categoryId, customCategories);
 
+    final isExpanded = _expandedCategories.contains(categoryId);
+
     final expansionTile = ExpansionTile(
+      key: ValueKey('category_$categoryId'),
+      initiallyExpanded: isExpanded,
+      onExpansionChanged: (expanded) {
+        setState(() {
+          if (expanded) {
+            _expandedCategories.add(categoryId);
+          } else {
+            _expandedCategories.remove(categoryId);
+          }
+        });
+      },
       leading: emoji != null
           ? Text(emoji, style: const TextStyle(fontSize: 20))
           : Icon(
@@ -302,6 +368,7 @@ class _ManagePredefinedTasksScreenState
         final isHighlighted = candidateData.isNotEmpty;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
+          clipBehavior: Clip.hardEdge,
           decoration: BoxDecoration(
             color: isHighlighted
                 ? color.withOpacity(0.25)
@@ -444,8 +511,14 @@ class _ManagePredefinedTasksScreenState
         data: task,
         delay: const Duration(milliseconds: 200),
         onDragStarted: () => setState(() => _isDragging = true),
-        onDragEnd: (_) => setState(() => _isDragging = false),
-        onDraggableCanceled: (_, __) => setState(() => _isDragging = false),
+        onDragEnd: (_) {
+          _stopAutoScroll();
+          setState(() => _isDragging = false);
+        },
+        onDraggableCanceled: (_, __) {
+          _stopAutoScroll();
+          setState(() => _isDragging = false);
+        },
         feedback: Material(
           elevation: 6,
           borderRadius: BorderRadius.circular(12),

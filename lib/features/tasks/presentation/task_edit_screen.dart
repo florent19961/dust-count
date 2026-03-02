@@ -212,7 +212,9 @@ class _TaskEditScreenState extends ConsumerState<TaskEditScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(S.editTask)),
-      body: Form(
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -398,6 +400,7 @@ class _TaskEditScreenState extends ConsumerState<TaskEditScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

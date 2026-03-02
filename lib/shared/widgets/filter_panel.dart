@@ -197,15 +197,15 @@ class _FilterPanelState extends State<FilterPanel> {
       runSpacing: 8,
       children: [
         ChoiceChip(
-          label: Text(S.filterThisWeek),
-          selected: widget.period == FilterPeriod.thisWeek,
-          onSelected: (_) => widget.onPeriodChanged(FilterPeriod.thisWeek),
+          label: Text(S.filterLast7Days),
+          selected: widget.period == FilterPeriod.last7Days,
+          onSelected: (_) => widget.onPeriodChanged(FilterPeriod.last7Days),
           selectedColor: theme.colorScheme.primaryContainer,
         ),
         ChoiceChip(
-          label: Text(S.filterThisMonth),
-          selected: widget.period == FilterPeriod.thisMonth,
-          onSelected: (_) => widget.onPeriodChanged(FilterPeriod.thisMonth),
+          label: Text(S.filterAllTime),
+          selected: widget.period == FilterPeriod.allTime,
+          onSelected: (_) => widget.onPeriodChanged(FilterPeriod.allTime),
           selectedColor: theme.colorScheme.primaryContainer,
         ),
         ChoiceChip(

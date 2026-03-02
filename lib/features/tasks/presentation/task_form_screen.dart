@@ -11,7 +11,9 @@ import 'package:dust_count/features/tasks/presentation/task_timer_screen.dart';
 import 'package:dust_count/shared/widgets/difficulty_badge.dart';
 import 'package:dust_count/shared/widgets/duration_field.dart';
 import 'package:dust_count/features/household/domain/household_providers.dart';
+import 'package:dust_count/features/auth/domain/auth_providers.dart';
 import 'package:dust_count/features/dashboard/domain/dashboard_providers.dart';
+import 'package:dust_count/app/theme/app_colors.dart';
 
 /// Screen for adding a new task log
 ///
@@ -49,10 +51,23 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   TaskDifficulty _difficulty = TaskDifficulty.reloo;
   bool _isPersonal = false;
 
+  // Performer selection (initialized to current user)
+  String? _performedBy;
+  String? _performedByName;
+
   @override
   void initState() {
     super.initState();
     _durationController.text = _durationMinutes.toString();
+    _initPerformer();
+  }
+
+  void _initPerformer() {
+    final currentUser = ref.read(currentUserProvider).value;
+    if (currentUser != null) {
+      _performedBy = currentUser.userId;
+      _performedByName = currentUser.displayName;
+    }
   }
 
   @override
@@ -63,6 +78,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
 
   /// Reset form to initial state
   void _resetForm() {
+    final currentUser = ref.read(currentUserProvider).value;
     setState(() {
       _selectedPredefinedTask = null;
       _selectedCategory = null;
@@ -70,6 +86,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       _durationMinutes = 15;
       _difficulty = TaskDifficulty.reloo;
       _isPersonal = false;
+      _performedBy = currentUser?.userId;
+      _performedByName = currentUser?.displayName;
     });
     _durationController.text = '15';
     _formKey.currentState?.reset();
@@ -211,6 +229,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       date: _selectedDate,
       comment: null,
       isPersonal: _isPersonal,
+      performedBy: _performedBy,
+      performedByName: _performedByName,
     );
 
     final state = ref.read(taskControllerProvider);
@@ -306,6 +326,53 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               side: BorderSide(color: colorScheme.outlineVariant),
             ),
           ),
+          // Performer dropdown (only if more than 1 member)
+          if (widget.household.members.length > 1) ...[
+            const SizedBox(height: 16),
+            DropdownButtonFormField<HouseholdMember>(
+              value: widget.household.members
+                  .where((m) => m.userId == _performedBy)
+                  .firstOrNull,
+              decoration: InputDecoration(
+                labelText: S.assignedTo,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.person),
+              ),
+              isExpanded: true,
+              items: widget.household.members.map((member) {
+                final memberColor = AppColors.getMemberColor(member.colorIndex);
+                return DropdownMenuItem<HouseholdMember>(
+                  value: member,
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 12,
+                        backgroundColor: memberColor,
+                        child: Text(
+                          member.displayName.substring(0, 1).toUpperCase(),
+                          style: TextStyle(
+                            color: colorScheme.onPrimary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(member.displayName),
+                    ],
+                  ),
+                );
+              }).toList(),
+              onChanged: (member) {
+                if (member != null) {
+                  setState(() {
+                    _performedBy = member.userId;
+                    _performedByName = member.displayName;
+                  });
+                }
+              },
+            ),
+          ],
           const SizedBox(height: 16),
           Text(
             S.duration,
@@ -390,15 +457,20 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     final state = ref.watch(taskControllerProvider);
     final formContent = _buildFormContent(state);
 
+    final dismissKeyboard = GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: formContent,
+    );
+
     if (widget.embedded) {
-      return formContent;
+      return dismissKeyboard;
     }
 
     return Scaffold(
       appBar: AppBar(
         title: Text(S.addTask),
       ),
-      body: formContent,
+      body: dismissKeyboard,
     );
   }
 }

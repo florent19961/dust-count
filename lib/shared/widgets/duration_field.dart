@@ -34,11 +34,13 @@ class DurationField extends StatelessWidget {
           child: TextFormField(
             controller: controller,
             keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
             textAlign: TextAlign.center,
             decoration: const InputDecoration(
               suffixText: 'min',
               border: OutlineInputBorder(),
             ),
+            onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
             onChanged: (value) {
               final parsed = int.tryParse(value);
               if (parsed != null && parsed > 0) {

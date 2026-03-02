@@ -267,6 +267,7 @@ abstract final class S {
   static const taskDetail = 'Détail de la tâche';
   static const taskDetails = 'Détails de la tâche';
   static const performedBy = 'Effectuée par';
+  static const assignedTo = 'Par';
 
   // Profile / Settings
   static const profile = 'Profil';
@@ -319,8 +320,8 @@ abstract final class S {
   static const noTasksYet = 'Aucune tâche pour le moment';
   static const addFirstTask =
       'Ajoutez votre première tâche pour commencer !';
-  static const filterThisWeek = 'Semaine';
-  static const filterThisMonth = 'Mois';
+  static const filterLast7Days = '7 jours';
+  static const filterAllTime = 'Tout';
   static const filterCustom = 'Période';
   static const selectPredefinedTask =
       'Sélectionnez une tâche prédéfinie';
@@ -490,6 +491,18 @@ abstract final class S {
       return '${hours}h';
     }
     return '${minutes}m';
+  }
+
+  // Task×member matrix
+  static const taskMemberMatrix = 'Récapitulatif tâches × membres';
+  static const topTasks = 'Top';
+  static const taskColumn = 'Tâche';
+
+  /// Format minutes as "HH:mm" (e.g. 150 → "02:30")
+  static String formatDurationHHmm(int minutes) {
+    final hours = minutes ~/ 60;
+    final mins = minutes % 60;
+    return '${hours.toString().padLeft(2, '0')}:${mins.toString().padLeft(2, '0')}';
   }
 
   // Category breakdown chart

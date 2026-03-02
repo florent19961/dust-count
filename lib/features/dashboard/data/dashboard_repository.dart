@@ -51,6 +51,19 @@ class CategoryBreakdownEntry {
   });
 }
 
+/// Entry for the task×member matrix
+class TaskMemberMatrixEntry {
+  final String taskName;
+  final Map<String, int> minutesPerMember;
+  final int totalMinutes;
+
+  const TaskMemberMatrixEntry({
+    required this.taskName,
+    required this.minutesPerMember,
+    required this.totalMinutes,
+  });
+}
+
 /// Repository for aggregating and computing dashboard statistics
 class DashboardRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -320,4 +333,50 @@ class DashboardRepository {
     return entries;
   }
 
+  /// Get task×member matrix: for each task, total minutes per member
+  Future<List<TaskMemberMatrixEntry>> getTaskMemberMatrix(
+    String householdId,
+    DateTime start,
+    DateTime end, {
+    String? categoryId,
+    String? taskNameFr,
+    TaskDifficulty? difficulty,
+    String? performedBy,
+    int personalFilterIndex = 1,
+  }) async {
+    final logs = await _fetchTaskLogs(
+      householdId,
+      start,
+      end,
+      categoryId: categoryId,
+      taskNameFr: taskNameFr,
+      difficulty: difficulty,
+      performedBy: performedBy,
+      personalFilterIndex: personalFilterIndex,
+    );
+
+    // Aggregate by (taskNameFr, performedBy) → sum of minutes
+    final Map<String, Map<String, int>> matrix = {};
+    for (final log in logs) {
+      final key = log.taskNameFr ?? log.taskName;
+      matrix.putIfAbsent(key, () => {});
+      matrix[key]![log.performedBy] =
+          (matrix[key]![log.performedBy] ?? 0) + log.durationMinutes;
+    }
+
+    // Build entries
+    final entries = matrix.entries.map((e) {
+      final total = e.value.values.fold<int>(0, (acc, v) => acc + v);
+      return TaskMemberMatrixEntry(
+        taskName: e.key,
+        minutesPerMember: e.value,
+        totalMinutes: total,
+      );
+    }).toList();
+
+    // Sort by total minutes descending
+    entries.sort((a, b) => b.totalMinutes.compareTo(a.totalMinutes));
+
+    return entries;
+  }
 }

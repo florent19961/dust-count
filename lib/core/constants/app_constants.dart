@@ -197,6 +197,9 @@ abstract class AppConstants {
   /// SharedPreferences key for onboarding completion
   static const String onboardingSeenKey = 'onboarding_seen';
 
+  /// SharedPreferences key for last viewed household
+  static const String lastHouseholdIdKey = 'last_household_id';
+
   /// Emoji for each difficulty level
   static const Map<TaskDifficulty, String> difficultyEmojis = {
     TaskDifficulty.plaisir: '\u{1F60A}', // 😊

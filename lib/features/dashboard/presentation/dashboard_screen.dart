@@ -10,6 +10,7 @@ import 'package:dust_count/features/dashboard/presentation/widgets/time_distribu
 import 'package:dust_count/features/dashboard/presentation/widgets/category_breakdown_chart.dart';
 import 'package:dust_count/features/dashboard/presentation/widgets/cumulative_evolution_chart.dart';
 import 'package:dust_count/features/dashboard/presentation/widgets/leaderboard_widget.dart';
+import 'package:dust_count/features/dashboard/presentation/widgets/task_member_matrix.dart';
 
 /// Main dashboard screen showing charts and leaderboard
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -111,6 +112,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ),
           ),
+          SliverToBoxAdapter(
+            child: _buildChartSection(
+              title: S.taskMemberMatrix,
+              icon: Icons.table_chart,
+              child: ref.watch(taskMemberMatrixProvider).when(
+                data: (entries) => TaskMemberMatrix(
+                  entries: entries,
+                  members: widget.household.members,
+                ),
+                loading: () => _buildLoadingState(),
+                error: (error, stack) => _buildErrorState(
+                  error.toString(),
+                ),
+              ),
+            ),
+          ),
           const SliverToBoxAdapter(
             child: SizedBox(height: 24),
           ),
@@ -191,7 +208,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       firstDate: DateTime(2020),
       lastDate: now,
       initialDateRange: DateTimeRange(
-        start: filter.startDate ?? now.startOfWeek,
+        start: filter.startDate ?? now.subtract(const Duration(days: 6)),
         end: filter.endDate ?? now,
       ),
     );
